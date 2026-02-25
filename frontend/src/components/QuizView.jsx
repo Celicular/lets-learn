@@ -4,11 +4,12 @@ import { Target, Loader, CheckCircle, XCircle, Trophy, BarChart2, Shuffle, BookO
 
 const API = 'http://localhost:8000';
 
-async function fetchQuiz(projectName, count = 5, topic = 'all', onProgress) {
+async function fetchQuiz(projectName, count = 5, topic = 'all', onProgress, signal) {
   const res = await fetch(`${API}/projects/${projectName}/quiz`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ count, fmt: 'json', topic })
+    body: JSON.stringify({ count, fmt: 'json', topic }),
+    signal
   });
   if (!res.ok) throw new Error('Server error');
 
@@ -32,8 +33,8 @@ async function fetchQuiz(projectName, count = 5, topic = 'all', onProgress) {
   });
 }
 
-async function fetchTopics(projectName, onProgress) {
-  const res = await fetch(`${API}/projects/${projectName}/topics`);
+async function fetchTopics(projectName, onProgress, signal) {
+  const res = await fetch(`${API}/projects/${projectName}/topics`, { signal });
   if (!res.ok) throw new Error('Server error');
   const reader = res.body.getReader();
   const decoder = new TextDecoder('utf-8');
@@ -54,20 +55,21 @@ async function fetchTopics(projectName, onProgress) {
 function QuizQuestion({ question, options, onAnswer, answered, selected, correct }) {
   return (
     <div className="w-full">
-      <h3 className="text-lg font-extrabold text-slate-900 mb-6 leading-snug">{question}</h3>
-      <div className="space-y-3">
+      <h3 className="text-2xl font-black text-slate-900 mb-8 leading-snug uppercase tracking-tight">{question}</h3>
+      <div className="space-y-4">
         {options.map((opt, i) => {
-          let style = 'border-slate-200 bg-white hover:border-indigo-400 hover:bg-indigo-50/50';
+          let style = 'border-slate-900 bg-white hover:bg-yellow-100 shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]';
           if (answered) {
-            if (opt === correct) style = 'border-emerald-500 bg-emerald-50 text-emerald-800';
-            else if (opt === selected && opt !== correct) style = 'border-red-400 bg-red-50 text-red-800';
+            if (opt === correct) style = 'border-slate-900 bg-lime-400 text-slate-900 shadow-[0px_0px_0px_#0f172a] translate-x-[2px] translate-y-[2px]';
+            else if (opt === selected && opt !== correct) style = 'border-slate-900 bg-red-400 text-slate-900 shadow-[0px_0px_0px_#0f172a] translate-x-[2px] translate-y-[2px]';
+            else style = 'border-slate-900 bg-slate-100 opacity-50 shadow-[0px_0px_0px_#0f172a] translate-x-[2px] translate-y-[2px]';
           }
           return (
             <button
               key={i}
               onClick={() => !answered && onAnswer(opt)}
               disabled={answered}
-              className={`w-full text-left px-5 py-4 rounded-2xl border-2 font-bold text-sm transition-all ${style} disabled:cursor-default`}
+              className={`w-full text-left px-5 py-4 border-4 font-black text-lg transition-all ${style} disabled:cursor-default`}
             >
               <span className="mr-3 opacity-50 font-black">{String.fromCharCode(65 + i)}.</span>{opt}
             </button>
@@ -82,7 +84,6 @@ function QuizQuestion({ question, options, onAnswer, answered, selected, correct
 function ResultsScreen({ results, mode, onRetry, onSave, isSaving }) {
   const correct = results.filter(r => r.isCorrect).length;
   const pct = Math.round((correct / results.length) * 100);
-  const scoreColor = pct >= 70 ? 'text-emerald-600' : pct >= 40 ? 'text-amber-600' : 'text-red-600';
   
   // Group by topic if deep assessment
   const byTopic = {};
@@ -97,31 +98,31 @@ function ResultsScreen({ results, mode, onRetry, onSave, isSaving }) {
   return (
     <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="w-full max-w-2xl mx-auto py-8">
       {/* Score card */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-8 text-center mb-6">
-        <Trophy className="w-12 h-12 text-amber-400 mx-auto mb-4" />
-        <div className={`text-6xl font-black mb-2 ${scoreColor}`}>{pct}%</div>
-        <div className="text-slate-500 font-medium mb-4">{correct} of {results.length} correct</div>
-        <div className={`inline-block px-4 py-1.5 rounded-full font-black text-sm ${pct >= 70 ? 'bg-emerald-100 text-emerald-700' : pct >= 40 ? 'bg-amber-100 text-amber-700' : 'bg-red-100 text-red-700'}`}>
-          {pct >= 70 ? '🎉 Strong Performance' : pct >= 40 ? '📚 Keep Studying' : '❌ Needs Improvement'}
+      <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] p-8 text-center mb-6">
+        <Trophy className="w-16 h-16 text-slate-900 mx-auto mb-4 stroke-[2px]" />
+        <div className={`text-7xl font-black mb-2 text-slate-900 tracking-tighter`}>{pct}%</div>
+        <div className="text-slate-900 font-bold mb-4 uppercase tracking-widest">{correct} of {results.length} correct</div>
+        <div className={`inline-block border-2 border-slate-900 px-4 py-2 font-black text-sm uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] ${pct >= 70 ? 'bg-lime-400 text-slate-900' : pct >= 40 ? 'bg-yellow-400 text-slate-900' : 'bg-red-400 text-slate-900'}`}>
+          {pct >= 70 ? 'Strong Performance' : pct >= 40 ? 'Keep Studying' : 'Needs Improvement'}
         </div>
       </div>
 
       {/* Topic breakdown for deep mode */}
       {mode === 'deep' && Object.keys(byTopic).length > 0 && (
-        <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mb-6">
-          <h3 className="font-extrabold text-slate-900 mb-4 flex items-center gap-2"><BarChart2 className="w-5 h-5 text-indigo-500" /> Topic Breakdown</h3>
-          <div className="space-y-4">
+        <div className="bg-cyan-300 border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] p-6 mb-6">
+          <h3 className="font-black text-slate-900 uppercase tracking-widest bg-white border-2 border-slate-900 px-3 py-1 shadow-[4px_4px_0px_#0f172a] inline-flex items-center gap-2 mb-6"><BarChart2 className="w-5 h-5 text-slate-900 stroke-[3px]" /> Topic Breakdown</h3>
+          <div className="space-y-6">
             {Object.entries(byTopic).map(([topic, data]) => {
               const tPct = Math.round((data.correct / data.total) * 100);
-              const barColor = tPct >= 70 ? 'bg-emerald-500' : tPct >= 40 ? 'bg-amber-500' : 'bg-red-500';
+              const barColor = tPct >= 70 ? 'bg-lime-400' : tPct >= 40 ? 'bg-yellow-400' : 'bg-red-400';
               return (
                 <div key={topic}>
-                  <div className="flex justify-between text-sm font-bold text-slate-700 mb-1">
+                  <div className="flex justify-between text-sm font-black text-slate-900 mb-2 uppercase tracking-tight">
                     <span>{topic}</span>
-                    <span className={tPct >= 70 ? 'text-emerald-600' : tPct >= 40 ? 'text-amber-600' : 'text-red-600'}>{tPct}%</span>
+                    <span>{tPct}%</span>
                   </div>
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
-                    <motion.div initial={{ width: 0 }} animate={{ width: `${tPct}%` }} transition={{ duration: 0.7, ease: 'easeOut' }} className={`h-full rounded-full ${barColor}`} />
+                  <div className="w-full h-4 bg-white border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] overflow-hidden">
+                    <motion.div initial={{ width: 0 }} animate={{ width: `${tPct}%` }} transition={{ duration: 0.7, ease: 'easeOut' }} className={`h-full border-r-4 border-slate-900 ${barColor}`} />
                   </div>
                 </div>
               );
@@ -131,17 +132,17 @@ function ResultsScreen({ results, mode, onRetry, onSave, isSaving }) {
       )}
 
       {/* Wrong answers review */}
-      <div className="bg-white rounded-3xl border border-slate-200 shadow-sm p-6 mb-6">
-        <h3 className="font-extrabold text-slate-900 mb-4">Answer Review</h3>
-        <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+      <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] p-6 mb-6">
+        <h3 className="font-black text-slate-900 mb-6 uppercase tracking-widest inline-block border-b-4 border-slate-900">Answer Review</h3>
+        <div className="space-y-4 max-h-64 overflow-y-auto pr-4">
           {results.map((r, i) => (
-            <div key={i} className={`flex items-start gap-3 p-3 rounded-2xl ${r.isCorrect ? 'bg-emerald-50' : 'bg-red-50'}`}>
-              {r.isCorrect ? <CheckCircle className="w-5 h-5 text-emerald-500 shrink-0 mt-0.5" /> : <XCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />}
+            <div key={i} className={`flex items-start gap-3 p-4 border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] ${r.isCorrect ? 'bg-lime-200' : 'bg-red-200'}`}>
+              {r.isCorrect ? <CheckCircle className="w-6 h-6 text-slate-900 shrink-0 mt-0.5 stroke-[2.5px]" /> : <XCircle className="w-6 h-6 text-slate-900 shrink-0 mt-0.5 stroke-[2.5px]" />}
               <div>
-                <div className="text-sm font-bold text-slate-800">{r.question}</div>
+                <div className="text-base font-black text-slate-900 mb-1">{r.question}</div>
                 {!r.isCorrect && (
-                  <div className="text-xs font-medium text-slate-500 mt-0.5">
-                    <span className="text-red-500">Your answer:</span> {r.selected} · <span className="text-emerald-600">Correct:</span> {r.correct}
+                  <div className="text-sm font-bold text-slate-900 mt-2 bg-white border-2 border-slate-900 p-2 shadow-[2px_2px_0px_#0f172a]">
+                    <span className="text-red-600 font-black">Your answer:</span> {r.selected} <br/> <span className="text-emerald-600 font-black mt-1 inline-block">Correct:</span> {r.correct}
                   </div>
                 )}
               </div>
@@ -150,12 +151,12 @@ function ResultsScreen({ results, mode, onRetry, onSave, isSaving }) {
         </div>
       </div>
 
-      <div className="flex gap-4 mt-6">
-        <button onClick={onRetry} className="flex-1 flex items-center justify-center gap-2 py-4 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-colors">
-          <RotateCcw className="w-4 h-4" /> Retry
+      <div className="flex gap-4 mt-8">
+        <button onClick={onRetry} className="flex-1 flex items-center justify-center gap-2 py-4 bg-yellow-300 text-slate-900 font-black border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] text-lg uppercase tracking-widest">
+          <RotateCcw className="w-5 h-5 stroke-[3px]" /> Retry
         </button>
-        <button onClick={onSave} disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 py-4 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-60">
-          {isSaving ? <Loader className="w-4 h-4 animate-spin" /> : <CheckCircle className="w-4 h-4" />}
+        <button onClick={onSave} disabled={isSaving} className="flex-1 flex items-center justify-center gap-2 py-4 bg-indigo-400 text-slate-900 font-black border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-indigo-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] disabled:opacity-60 text-lg uppercase tracking-widest">
+          {isSaving ? <Loader className="w-5 h-5 animate-spin stroke-[3px]" /> : <CheckCircle className="w-5 h-5 stroke-[3px]" />}
           {isSaving ? 'Saving...' : 'Save Results'}
         </button>
       </div>
@@ -164,7 +165,7 @@ function ResultsScreen({ results, mode, onRetry, onSave, isSaving }) {
 }
 
 // --- Main Quiz View ---
-export default function QuizView({ activeProj, onResultSaved }) {
+export default function QuizView({ activeProj, onResultSaved, setIsBusy }) {
   const [mode, setMode] = useState(null); // null | quick | targeted | deep
   const [phase, setPhase] = useState('select'); // select | topic-pick | loading | quiz | results
   const [questions, setQuestions] = useState([]);
@@ -177,14 +178,25 @@ export default function QuizView({ activeProj, onResultSaved }) {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState(null);
   const [streamContent, setStreamContent] = useState('');
+  const [abortController, setAbortController] = useState(null);
+
+  const cancelGeneration = () => {
+    if (abortController) {
+      abortController.abort();
+      if (setIsBusy) setIsBusy(false);
+    }
+  };
 
   const startQuick = async () => {
     setMode('quick');
     setPhase('loading');
     setError(null);
     setStreamContent('');
+    const controller = new AbortController();
+    setAbortController(controller);
+    if (setIsBusy) setIsBusy(true);
     try {
-      const qs = await fetchQuiz(activeProj, 5, 'all', setStreamContent);
+      const qs = await fetchQuiz(activeProj, 5, 'all', setStreamContent, controller.signal);
       setQuestions(qs.map(q => ({ ...q, topic: 'all' })));
       setCurrentQ(0);
       setAnswers([]);
@@ -192,8 +204,14 @@ export default function QuizView({ activeProj, onResultSaved }) {
       setSelectedOption(null);
       setPhase('quiz');
     } catch (err) {
-      setError('Failed to generate quiz. Is the server running?');
-      setPhase('select');
+      if (err.name === 'AbortError') { setPhase('select'); }
+      else {
+        setError('Failed to generate quiz. Is the server running?');
+        setPhase('select');
+      }
+    } finally {
+      setAbortController(null);
+      if (setIsBusy) setIsBusy(false);
     }
   };
 
@@ -202,13 +220,19 @@ export default function QuizView({ activeProj, onResultSaved }) {
     setPhase('loading');
     setError(null);
     setStreamContent('');
+    const controller = new AbortController();
+    setAbortController(controller);
+    if (setIsBusy) setIsBusy(true);
     try {
-      const topics = await fetchTopics(activeProj, setStreamContent);
+      const topics = await fetchTopics(activeProj, setStreamContent, controller.signal);
       setAvailableTopics(topics);
       setPhase('topic-pick');
     } catch (err) {
-      setError('Failed to fetch topics.');
+      if (err.name !== 'AbortError') setError('Failed to fetch topics.');
       setPhase('select');
+    } finally {
+      setAbortController(null);
+      if (setIsBusy) setIsBusy(false);
     }
   };
 
@@ -217,14 +241,17 @@ export default function QuizView({ activeProj, onResultSaved }) {
     setPhase('loading');
     setError(null);
     setStreamContent('');
+    const controller = new AbortController();
+    setAbortController(controller);
+    if (setIsBusy) setIsBusy(true);
     try {
-      const allTopics = await fetchTopics(activeProj, setStreamContent);
+      const allTopics = await fetchTopics(activeProj, setStreamContent, controller.signal);
       const shuffled = [...allTopics].sort(() => Math.random() - 0.5).slice(0, 4);
       
       const results = [];
       for (const t of shuffled) {
         setStreamContent(`[DEEP ASSESSMENT] Initialising generator for topic: ${t}\n\n`);
-        const qs = await fetchQuiz(activeProj, 3, t, (raw) => setStreamContent(raw));
+        const qs = await fetchQuiz(activeProj, 3, t, (raw) => setStreamContent(raw), controller.signal);
         results.push(qs.map(q => ({ ...q, topic: t })));
       }
       
@@ -236,8 +263,11 @@ export default function QuizView({ activeProj, onResultSaved }) {
       setSelectedOption(null);
       setPhase('quiz');
     } catch (err) {
-      setError('Failed to generate deep assessment.');
+      if (err.name !== 'AbortError') setError('Failed to generate deep assessment.');
       setPhase('select');
+    } finally {
+      setAbortController(null);
+      if (setIsBusy) setIsBusy(false);
     }
   };
 
@@ -245,8 +275,11 @@ export default function QuizView({ activeProj, onResultSaved }) {
     if (!selectedTopic) return;
     setPhase('loading');
     setStreamContent('');
+    const controller = new AbortController();
+    setAbortController(controller);
+    if (setIsBusy) setIsBusy(true);
     try {
-      const qs = await fetchQuiz(activeProj, 5, selectedTopic, setStreamContent);
+      const qs = await fetchQuiz(activeProj, 5, selectedTopic, setStreamContent, controller.signal);
       setQuestions(qs.map(q => ({ ...q, topic: selectedTopic })));
       setCurrentQ(0);
       setAnswers([]);
@@ -254,8 +287,11 @@ export default function QuizView({ activeProj, onResultSaved }) {
       setSelectedOption(null);
       setPhase('quiz');
     } catch (err) {
-      setError('Failed to generate quiz.');
+      if (err.name !== 'AbortError') setError('Failed to generate quiz.');
       setPhase('select');
+    } finally {
+      setAbortController(null);
+      if (setIsBusy) setIsBusy(false);
     }
   };
 
@@ -293,6 +329,7 @@ export default function QuizView({ activeProj, onResultSaved }) {
     });
 
     setIsSaving(true);
+    if (setIsBusy) setIsBusy(true);
     try {
       // Simulate slight network delay for UI UX to register "saving"
       await new Promise(r => setTimeout(r, 600)); 
@@ -301,6 +338,7 @@ export default function QuizView({ activeProj, onResultSaved }) {
       console.error('Failed to save results', err);
     } finally {
       setIsSaving(false);
+      if (setIsBusy) setIsBusy(false);
     }
   };
 
@@ -314,51 +352,49 @@ export default function QuizView({ activeProj, onResultSaved }) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col p-8 overflow-y-auto">
+    <div className="w-full h-full flex flex-col p-8 overflow-y-auto bg-[#e6ebf5]">
       <div className="mb-8">
-        <h1 className="text-3xl font-black text-slate-900 mb-1">Adaptive Quiz</h1>
-        <p className="text-slate-500 font-medium">Test your knowledge with AI-generated questions from your documents.</p>
+        <h1 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">Adaptive Quiz</h1>
+        <p className="text-slate-900 font-bold bg-white border-2 border-slate-900 px-3 py-1 shadow-[4px_4px_0px_#0f172a] inline-block">Test your knowledge with AI-generated questions from your documents.</p>
       </div>
 
-      {error && <div className="p-4 bg-red-50 border border-red-200 rounded-2xl text-red-700 font-medium mb-6">{error}</div>}
+      {error && <div className="p-4 bg-red-300 border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] text-slate-900 font-black uppercase tracking-widest mb-6">{error}</div>}
 
       <AnimatePresence mode="wait">
         {/* Mode Selection */}
         {phase === 'select' && (
-          <motion.div key="select" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-5 max-w-4xl">
+          <motion.div key="select" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="grid grid-cols-1 md:grid-cols-3 gap-6 max-w-5xl">
             {[
               {
-                id: 'quick', icon: <Target className="w-8 h-8" />, color: 'from-indigo-500 to-blue-500',
+                id: 'quick', icon: <Target className="w-10 h-10 stroke-[2px] text-slate-900" />, color: 'bg-indigo-300',
                 title: 'Quick Quiz', desc: 'Random questions from all your documents. No ranking, just a fast knowledge check.',
                 badge: 'Unranked', onClick: startQuick
               },
               {
-                id: 'targeted', icon: <BookOpen className="w-8 h-8" />, color: 'from-violet-500 to-purple-500',
+                id: 'targeted', icon: <BookOpen className="w-10 h-10 stroke-[2px] text-slate-900" />, color: 'bg-fuchsia-300',
                 title: 'Topic Quiz', desc: 'Choose a specific topic and receive a focused quiz. Get ranked scores per topic.',
                 badge: 'Ranked by Topic', onClick: startTargeted
               },
               {
-                id: 'deep', icon: <Shuffle className="w-8 h-8" />, color: 'from-rose-500 to-pink-500',
+                id: 'deep', icon: <Shuffle className="w-10 h-10 stroke-[2px] text-slate-900" />, color: 'bg-pink-300',
                 title: 'Deep Assessment', desc: 'The AI picks 3-4 random topics and creates a comprehensive multi-topic exam.',
                 badge: 'Full Breakdown', onClick: startDeep
               }
             ].map(item => (
               <motion.button
                 key={item.id}
-                whileHover={{ y: -4, scale: 1.02 }}
                 onClick={item.onClick}
                 disabled={!activeProj}
-                className={`text-left p-7 rounded-3xl bg-gradient-to-br ${item.color} text-white shadow-xl relative overflow-hidden group disabled:opacity-50 disabled:pointer-events-none transition-all`}
+                className={`text-left p-8 border-4 border-slate-900 ${item.color} text-slate-900 shadow-[8px_8px_0px_#0f172a] relative overflow-hidden group disabled:opacity-50 disabled:pointer-events-none transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]`}
               >
-                <div className="absolute -right-6 -bottom-6 w-28 h-28 bg-white/10 rounded-full" />
-                <div className="mb-5 opacity-90">{item.icon}</div>
-                <div className="font-black text-xl mb-2">{item.title}</div>
-                <div className="text-white/80 text-sm font-medium leading-snug mb-5">{item.desc}</div>
-                <div className="inline-block px-3 py-1 bg-white/20 rounded-full text-xs font-black backdrop-blur-sm">
+                <div className="mb-6">{item.icon}</div>
+                <div className="font-black text-2xl mb-3 uppercase tracking-tight">{item.title}</div>
+                <div className="text-slate-900 text-sm font-bold leading-relaxed mb-6 border-t-2 border-slate-900 pt-3">{item.desc}</div>
+                <div className="inline-block px-3 py-1 bg-white border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] text-xs font-black uppercase tracking-widest">
                   {item.badge}
                 </div>
-                <div className="absolute bottom-5 right-5 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <ArrowRight className="w-5 h-5" />
+                <div className="absolute bottom-6 right-6 opacity-0 group-hover:opacity-100 transition-opacity translate-x-4 group-hover:translate-x-0">
+                  <ArrowRight className="w-6 h-6 stroke-[3px]" />
                 </div>
               </motion.button>
             ))}
@@ -367,22 +403,22 @@ export default function QuizView({ activeProj, onResultSaved }) {
 
         {/* Topic selection for targeted quiz */}
         {phase === 'topic-pick' && (
-          <motion.div key="topic-pick" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-xl">
-            <h3 className="font-extrabold text-slate-800 text-xl mb-4">Select a Topic</h3>
-            <div className="grid grid-cols-2 gap-3 mb-6">
+          <motion.div key="topic-pick" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-xl bg-white border-4 border-slate-900 p-8 shadow-[8px_8px_0px_#0f172a]">
+            <h3 className="font-black text-slate-900 text-2xl mb-6 uppercase tracking-tight">Select a Topic</h3>
+            <div className="grid grid-cols-2 gap-4 mb-8">
               {availableTopics.map((t, i) => (
                 <button
                   key={i}
                   onClick={() => setSelectedTopic(t)}
-                  className={`px-4 py-3 rounded-2xl border-2 text-sm font-bold text-left transition-all ${selectedTopic === t ? 'border-indigo-600 bg-indigo-600 text-white' : 'border-slate-200 bg-white text-slate-700 hover:border-indigo-400'}`}
+                  className={`px-4 py-4 border-4 text-sm font-black text-left transition-all uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] ${selectedTopic === t ? 'border-slate-900 bg-indigo-400 text-slate-900 translate-x-[2px] translate-y-[2px] shadow-[0px_0px_0px_#0f172a]' : 'border-slate-900 bg-white text-slate-900 hover:bg-slate-100'}`}
                 >
                   {t}
                 </button>
               ))}
             </div>
-            <div className="flex gap-3">
-              <button onClick={reset} className="px-5 py-3 bg-slate-100 text-slate-700 font-bold rounded-2xl hover:bg-slate-200 transition-colors">← Back</button>
-              <button onClick={startTopicQuiz} disabled={!selectedTopic} className="flex-1 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg shadow-indigo-200 hover:bg-indigo-700 transition-colors disabled:opacity-50">
+            <div className="flex gap-4">
+              <button onClick={reset} className="px-6 py-4 bg-white border-4 border-slate-900 text-slate-900 font-black shadow-[4px_4px_0px_#0f172a] hover:bg-slate-100 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] uppercase tracking-widest">← Back</button>
+              <button onClick={startTopicQuiz} disabled={!selectedTopic} className="flex-1 py-4 bg-yellow-300 border-4 border-slate-900 text-slate-900 font-black shadow-[4px_4px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] disabled:opacity-50 uppercase tracking-widest">
                 Start Quiz on "{selectedTopic}"
               </button>
             </div>
@@ -399,24 +435,29 @@ export default function QuizView({ activeProj, onResultSaved }) {
           const progress = Math.min(100, Math.round((currentQ / totalQ) * 100));
 
           return (
-            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center flex-1 w-full max-w-3xl mx-auto py-8 text-center">
-              <Loader className="w-12 h-12 text-indigo-500 animate-spin mb-4" />
-              <h3 className="text-xl font-extrabold text-slate-800 mb-2">Generating Quiz</h3>
-              <p className="font-medium text-slate-500 mb-8">Reading documents and preparing your assessment...</p>
+            <motion.div key="loading" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col items-center justify-center flex-1 w-full max-w-3xl mx-auto py-8 text-center border-4 border-slate-900 bg-white shadow-[8px_8px_0px_#0f172a] p-12">
+              <Loader className="w-16 h-16 text-slate-900 animate-spin mb-6 stroke-[3px]" />
+              <h3 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">Generating Quiz</h3>
+              <p className="font-bold text-slate-900 bg-white border-2 border-slate-900 px-4 py-2 shadow-[2px_2px_0px_#0f172a] mb-10">Reading documents and preparing your assessment...</p>
               
               {/* Abstract Progress Bar */}
               <div className="w-full max-w-md mx-auto">
-                <div className="w-full bg-slate-100 rounded-full h-3 mb-3 overflow-hidden shadow-inner">
+                <div className="w-full bg-slate-100 border-4 border-slate-900 h-6 mb-4 shadow-[4px_4px_0px_#0f172a] overflow-hidden">
                   <motion.div 
-                    className="bg-indigo-500 h-full rounded-full" 
+                    className="bg-indigo-400 border-r-4 border-slate-900 h-full" 
                     animate={{ width: `${progress}%` }} 
                     transition={{ duration: 0.3, ease: 'easeOut' }} 
                   />
                 </div>
-                <div className="text-sm font-bold text-slate-500 text-center animate-pulse">
+                <div className="text-sm font-black text-slate-900 text-center animate-pulse mb-8 uppercase tracking-widest">
                   {label}
                 </div>
               </div>
+              {abortController && (
+                 <button onClick={cancelGeneration} className="px-6 py-3 bg-red-400 text-slate-900 font-black border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-red-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] self-center uppercase tracking-widest">
+                   Cancel Quiz
+                 </button>
+              )}
             </motion.div>
           );
         })()}
@@ -426,23 +467,23 @@ export default function QuizView({ activeProj, onResultSaved }) {
           <motion.div key="quiz" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="max-w-2xl w-full">
             {/* Progress */}
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-black text-slate-400 uppercase tracking-wider">
+              <span className="text-xs font-black text-slate-900 uppercase tracking-widest border-2 border-slate-900 bg-white px-2 py-1 shadow-[2px_2px_0px_#0f172a]">
                 Question {currentQ + 1} of {questions.length}
                 {questions[currentQ]?.topic && questions[currentQ].topic !== 'all' && (
-                  <span className="ml-2 text-indigo-500">· {questions[currentQ].topic}</span>
+                  <span className="ml-2 text-indigo-600">· {questions[currentQ].topic}</span>
                 )}
               </span>
-              <span className="text-xs font-black text-slate-400">{Math.round(((currentQ) / questions.length) * 100)}%</span>
+              <span className="text-lg font-black text-slate-900">{Math.round(((currentQ) / questions.length) * 100)}%</span>
             </div>
-            <div className="w-full h-2 bg-slate-100 rounded-full mb-8">
+            <div className="w-full h-4 bg-white border-4 border-slate-900 shadow-[2px_2px_0px_#0f172a] mb-8 overflow-hidden">
               <motion.div
                 animate={{ width: `${((currentQ) / questions.length) * 100}%` }}
-                className="h-full bg-indigo-600 rounded-full"
+                className="h-full bg-emerald-400 border-r-4 border-slate-900"
                 transition={{ duration: 0.4 }}
               />
             </div>
 
-            <div className="bg-white border border-slate-200 rounded-3xl shadow-sm p-8">
+            <div className="bg-white border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] p-8">
               <QuizQuestion
                 question={questions[currentQ].question}
                 options={questions[currentQ].options}
@@ -453,9 +494,9 @@ export default function QuizView({ activeProj, onResultSaved }) {
               />
               
               {answeredCurrent && (
-                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="mt-6 flex justify-end">
-                  <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3 bg-indigo-600 text-white font-bold rounded-2xl shadow-lg hover:bg-indigo-700 transition-all hover:-translate-y-0.5">
-                    {currentQ + 1 < questions.length ? 'Next Question' : 'See Results'} <ArrowRight className="w-4 h-4" />
+                <motion.div initial={{ opacity: 0, y: 5 }} animate={{ opacity: 1, y: 0 }} className="mt-8 flex justify-end">
+                  <button onClick={handleNext} className="flex items-center gap-2 px-6 py-3 bg-indigo-400 border-4 border-slate-900 text-slate-900 font-black shadow-[4px_4px_0px_#0f172a] hover:bg-indigo-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] uppercase tracking-widest">
+                    {currentQ + 1 < questions.length ? 'Next Question' : 'See Results'} <ArrowRight className="w-5 h-5 stroke-[3px]" />
                   </button>
                 </motion.div>
               )}

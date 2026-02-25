@@ -1,84 +1,117 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Play, Brain, BookOpen, Target, Network } from 'lucide-react';
+import { Play, Brain, BookOpen, Target, Network, Database } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 const Slide1 = () => {
   const navigate = useNavigate();
   
   return (
-    <div className="w-full h-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between relative px-4 text-center md:text-left">
-      <div className="flex-1 space-y-8 z-10 mt-12 md:mt-0 flex flex-col items-center md:items-start">
-      <motion.h1 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="text-5xl lg:text-7xl font-extrabold tracking-tight text-slate-900 leading-tight"
-      >
-        LetsLearn — <br/> Turn Any Document Into <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-cyan-500">Smart Learning</span>
-      </motion.h1>
-      <motion.p 
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="text-xl text-slate-600 max-w-2xl leading-relaxed"
-      >
-        Upload slides, PDFs, notes, or question banks and instantly generate adaptive quizzes, flashcards, and personalized learning paths powered by AI.
-      </motion.p>
-      <motion.button 
-        onClick={() => navigate('/fulldemo')}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.6 }}
-        className="neu-panel px-8 py-4 text-lg font-bold text-indigo-700 flex items-center gap-3 hover:text-indigo-800"
-      >
-        <Play className="w-5 h-5 fill-current" /> Explore Demo
-      </motion.button>
-    </div>
-
-    <div className="flex-1 flex justify-center items-center relative h-[600px] w-full z-0 hidden md:flex">
-      <motion.div 
-        className="absolute w-64 h-64 rounded-full bg-gradient-to-tr from-indigo-500 to-cyan-400 sphere-glow z-10"
-      />
+    <div className="w-full h-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between relative px-4 text-center md:text-left pt-12">
       
-      {/* Orbiting / Floating cards */}
-      <motion.div 
-         animate={{ y: [-10, 10, -10] }}
-         transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
-         className="glass-panel absolute top-20 right-20 p-4 flex items-center gap-3 z-20"
-      >
-        <div className="bg-indigo-100 p-2 rounded-full"><Brain className="w-5 h-5 text-indigo-600" /></div>
-        <span className="font-semibold text-slate-800">Adaptive Quiz Engine</span>
-      </motion.div>
+      {/* LEFT COLUMN - TEXT CONTENT */}
+      <div className="flex-1 space-y-10 z-10 flex flex-col items-center md:items-start">
+        
+        {/* Brutalist Badge */}
+        <motion.div 
+          initial={{ opacity: 0, scale: 0.9 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.3 }}
+          className="bg-yellow-400 border-4 border-slate-900 px-4 py-1.5 font-black uppercase text-sm tracking-widest text-slate-900 shadow-[4px_4px_0px_#0f172a] rotate-[-2deg]"
+        >
+          100% Local AI Learning
+        </motion.div>
 
-      <motion.div 
-         animate={{ y: [10, -10, 10] }}
-         transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
-         className="glass-panel absolute bottom-32 right-10 p-4 flex items-center gap-3 z-20"
-      >
-        <div className="bg-cyan-100 p-2 rounded-full"><BookOpen className="w-5 h-5 text-cyan-600" /></div>
-        <span className="font-semibold text-slate-800">Smart Flashcards</span>
-      </motion.div>
+        {/* Hero Headline */}
+        <motion.h1 
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1, type: "spring", stiffness: 100 }}
+          className="text-6xl lg:text-8xl font-black tracking-tighter text-slate-900 leading-[1.1] uppercase"
+        >
+          LetsLearn <br/> 
+          <span className="text-white text-stroke-brutal inline-block mt-2">
+             Smart 
+          </span>
+          <span className="bg-cyan-400 border-4 border-slate-900 px-4 ml-4 shadow-[6px_6px_0px_#0f172a] rotate-[1deg] inline-block">
+             Tutor.
+          </span>
+        </motion.h1>
 
-      <motion.div 
-         animate={{ y: [-15, 15, -15] }}
-         transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
-         className="glass-panel absolute top-40 left-10 p-4 flex items-center gap-3 z-20"
-      >
-        <div className="bg-coral-100 p-2 rounded-full"><Target className="w-5 h-5 text-coral-500" /></div>
-        <span className="font-semibold text-slate-800">Weak Area Detection</span>
-      </motion.div>
+        {/* Hero Paragraph */}
+        <motion.p 
+          initial={{ opacity: 0, x: -30 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2, type: "spring", stiffness: 100 }}
+          className="text-xl lg:text-2xl text-slate-800 font-bold max-w-2xl leading-relaxed bg-white border-4 border-slate-900 p-6 shadow-[6px_6px_0px_#0f172a]"
+        >
+          Upload slides, PDFs, notes, or question banks and instantly generate adaptive quizzes, flashcards, and personalized learning paths powered by AI.
+        </motion.p>
 
-      <motion.div 
-         animate={{ y: [15, -15, 15] }}
-         transition={{ duration: 4.5, repeat: Infinity, ease: "easeInOut" }}
-         className="glass-panel absolute bottom-20 left-20 p-4 flex items-center gap-3 z-20"
-      >
-        <div className="bg-lime-100 p-2 rounded-full"><Network className="w-5 h-5 text-lime-600" /></div>
-        <span className="font-semibold text-slate-800">RAG Powered Intelligence</span>
-      </motion.div>
+        {/* Brutalist Button */}
+        <motion.button 
+          onClick={() => navigate('/fulldemo')}
+          initial={{ opacity: 0, y: 30 }}
+          animate={{ opacity: 1, y: 0 }}
+          whileHover={{ x: 4, y: 4, boxShadow: "0px 0px 0px #0f172a" }}
+          transition={{ duration: 0.1 }}
+          className="bg-indigo-500 border-4 border-slate-900 px-10 py-5 text-xl font-black uppercase tracking-wider text-white flex items-center gap-4 shadow-[8px_8px_0px_#0f172a] transition-all cursor-pointer"
+        >
+          <Play className="w-7 h-7 fill-white stroke-slate-900 stroke-[3px]" /> Explore Demo
+        </motion.button>
+      </div>
+
+      {/* RIGHT COLUMN - BRUTALIST FLOATING GRID */}
+      <div className="flex-1 flex justify-center items-center relative h-[600px] w-full z-0 hidden md:flex">
+        
+        {/* Core Block */}
+        <motion.div 
+          initial={{ scale: 0 }}
+          animate={{ scale: 1 }}
+          transition={{ type: "spring", stiffness: 50 }}
+          className="absolute w-72 h-72 bg-coral-400 border-8 border-slate-900 shadow-[16px_16px_0px_#0f172a] z-10 flex items-center justify-center rotate-3"
+        >
+           <Brain className="w-32 h-32 text-slate-900 stroke-[1.5px]" />
+        </motion.div>
+        
+        {/* Floating cards */}
+        <motion.div 
+           animate={{ y: [-5, 5, -5] }}
+           transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute top-10 right-10 bg-white border-4 border-slate-900 p-4 shadow-[6px_6px_0px_#0f172a] flex items-center gap-4 z-20 cursor-pointer hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[0px_0px_0px_#0f172a] transition-all"
+        >
+          <div className="bg-indigo-400 border-2 border-slate-900 p-2"><Database className="w-6 h-6 text-slate-900" /></div>
+          <span className="font-black text-slate-900 uppercase tracking-widest text-sm">FAISS Engine</span>
+        </motion.div>
+
+        <motion.div 
+           animate={{ y: [5, -5, 5] }}
+           transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute bottom-20 right-4 bg-yellow-400 border-4 border-slate-900 p-4 shadow-[6px_6px_0px_#0f172a] flex items-center gap-4 z-20 cursor-pointer hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[0px_0px_0px_#0f172a] transition-all"
+        >
+          <div className="bg-white border-2 border-slate-900 p-2"><BookOpen className="w-6 h-6 text-slate-900" /></div>
+          <span className="font-black text-slate-900 uppercase tracking-widest text-sm">Smart Flashcards</span>
+        </motion.div>
+
+        <motion.div 
+           animate={{ y: [-8, 8, -8] }}
+           transition={{ duration: 3.5, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute top-32 left-0 bg-lime-400 border-4 border-slate-900 p-4 shadow-[6px_6px_0px_#0f172a] flex items-center gap-4 z-20 -rotate-3 cursor-pointer hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[0px_0px_0px_#0f172a] hover:-rotate-1 transition-all"
+        >
+          <div className="bg-white border-2 border-slate-900 p-2"><Target className="w-6 h-6 text-slate-900" /></div>
+          <span className="font-black text-slate-900 uppercase tracking-widest text-sm">Local Mastery</span>
+        </motion.div>
+
+        <motion.div 
+           animate={{ y: [6, -6, 6] }}
+           transition={{ duration: 2.8, repeat: Infinity, ease: "easeInOut" }}
+           className="absolute bottom-32 left-10 bg-cyan-400 border-4 border-slate-900 p-4 shadow-[6px_6px_0px_#0f172a] flex items-center gap-4 z-20 rotate-2 cursor-pointer hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-[0px_0px_0px_#0f172a] hover:rotate-1 transition-all"
+        >
+          <div className="bg-white border-2 border-slate-900 p-2"><Network className="w-6 h-6 text-slate-900" /></div>
+          <span className="font-black text-slate-900 uppercase tracking-widest text-sm">Mistral 7B</span>
+        </motion.div>
+      </div>
     </div>
-  </div>
   );
 };
 

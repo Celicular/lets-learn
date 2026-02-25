@@ -120,12 +120,12 @@ def retrieve(query, k=2):
     return []
 
 
-def _get_context(query="", limit=10, max_chars=3000):
+def _get_context(query="", limit=10, max_chars=3000, k=2):
     if collection.count() == 0:
         return ""
     
     if query:
-        docs = retrieve(query)
+        docs = retrieve(query, k=k)
     else:
         res = collection.get(limit=limit)
         docs = res.get("documents", [])
@@ -134,11 +134,214 @@ def _get_context(query="", limit=10, max_chars=3000):
     return context[:max_chars] if len(context) > max_chars else context
 
 
-def generate_answer(llm, query):
+def route_visual(llm, query: str) -> str:
+    """Mistral classifies query into 'diagram', 'visual', or 'text'."""
+    prompt = f"""[INST] Classify this student query into exactly one label:
+
+diagram → flowchart, process, architecture, system, lifecycle, pipeline, structure
+visual → explicit request for an image, picture, photo, scene, realistic image, concept art, illustration
+text → explanation, definition, comparison, factual question
+
+CRITICAL OVERRIDE: If the user explicitly asks for an "image", "picture", or "photo", you MUST output 'visual'.
+
+Student query: "{query}"
+
+Reply with ONLY one word: diagram, visual, or text.
+[/INST]"""
+    try:
+        # Added temperature=0.1 for high determinism and dot as a stopping char
+        result = llm.create_completion(prompt, max_tokens=5, temperature=0.1, stop=["</s>", "[INST]", "\n", ".", ","])
+        raw_text = result["choices"][0].get("text", "text").strip().lower()
+
+        route = "text"
+        if "diagram" in raw_text:
+            route = "diagram"
+        elif "visual" in raw_text:
+            route = "visual"
+
+        print(f"🤖 [AGENT] Route → {route}")
+        return route
+    except Exception as e:
+        print(f"⚠️ [AGENT] Router error: {e}")
+    return "text"
+
+
+def generate_mermaid(llm, query: str, context: str = "") -> str:
+    """
+    Generate a valid Mermaid flowchart using Mistral.
+    Includes cleaning + validation + fallback.
+    """
+
+    context_block = (
+        f"\nUse this exact explanation as context for the diagram to ensure perfect synchronization:\n{context}\n"
+        if context else ""
+    )
+
+    prompt = f"""[INST]
+You output ONLY Mermaid flowchart syntax.
+
+HARD RULES (never break):
+1. Start with: flowchart TD
+2. Use single-letter or short alphanumeric node IDs ONLY (A, B, C, D, N1).
+3. Define each node EXACTLY once using: A[Label]
+4. After defining nodes, ALL edges MUST use node IDs only (A --> B). NEVER use labels as IDs.
+5. One edge per line. No chaining.
+6. Edge labels must be 1–2 words ONLY. No commas, no punctuation.
+7. Allowed syntax ONLY:
+   A --> B
+   A -->|Label| B
+8. Forbidden syntax:
+   <--> , -- label --> , --<-- , multiple arrows in one line
+9. Node labels must be short words (no commas, no parentheses, no quotes).
+10. Output raw Mermaid only. No text.
+
+Student query: {query}
+Context: {context}
+[/INST]"""
+
+    try:
+        result = llm.create_completion(
+            prompt,
+            max_tokens=400,
+            temperature=0.2,
+            stop=["</s>", "[INST]"]
+        )
+
+        raw = result["choices"][0].get("text", "").strip()
+
+        # ---- CLEANING ----
+        raw = raw.replace("```mermaid", "").replace("```", "").strip()
+        print(f"\n[MERMAID RAW (PRE-VALIDATION)]:\n{raw}\n---------------------")
+
+        # Extract only Mermaid lines
+        lines = raw.splitlines()
+        keep = []
+        started = False
+
+        import re
+        
+        for line in lines:
+            line = line.strip()
+
+            if line.startswith("flowchart") or line.startswith("graph"):
+                started = True
+
+            # Auto-inject graph declaration if LLM forgot it and jumped straight to nodes
+            if not started and line and ("-->" in line or ("[" in line and "]" in line)):
+                keep.append("flowchart LR")
+                started = True
+
+            if started:
+                # Stop parsing if the LLM starts adding notes underneath
+                if line.startswith("Note:") or line.startswith("Here"):
+                    break
+                
+                # Auto-correct invalid conversational arrow labels (e.g. A -- label --> B converted to A -->|label| B)
+                # Matches A -- label --> B
+                line = re.sub(r'--\s*([^-<>|]+)\s*-->', r'-->|\1|', line)
+                # Matches A --<-- Data --> B
+                line = re.sub(r'--<--\s*([^-<>|]+)\s*-->', r'-->|\1|', line)
+                # Remove random bidirectional arrows 
+                line = line.replace("<-->", "-->").replace("<-", "")
+                
+                # Check for bad node definition formats LLM often outputs like 'I[Data Cubes]: Some text'
+                if not line.startswith("flowchart") and not line.startswith("graph"):
+                    # Include if it has an edge
+                    if "-->" in line or "-.->" in line or "==>" in line:
+                        keep.append(line)
+                    # Include if it is a simple node declaration (e.g. A[Label]) and NOT followed by colon-separated text
+                    elif "[" in line and "]" in line and ":" not in line.split("]")[1]:
+                        keep.append(line)
+                    elif line == "":
+                        keep.append(line)
+                else:
+                    keep.append(line)
+
+        code = "\n".join(keep).strip()
+        print(f"[MERMAID CLEANED (POST-PARSING)]:\n{code}\n---------------------")
+
+        # ---- VALIDATION ----
+        if not code.startswith("flowchart") and not code.startswith("graph"):
+            raise ValueError("Invalid Mermaid output (missing flowchart/graph declaration)")
+
+        if "-->" not in code:
+            raise ValueError("No edges detected")
+
+        print(f"📊 [MERMAID] Generated diagram ({len(code)} chars):\n{code}\n")
+        return code
+
+    except Exception as e:
+        print(f"⚠️ [MERMAID] Generation error: {e}")
+
+        # ---- FALLBACK (guaranteed valid) ----
+        fallback = """flowchart LR
+A[Input Data] --> B[Processing]
+B --> C[Analysis]
+C --> D[Output]
+"""
+        return fallback
+
+
+def create_sd_prompt(llm, query: str) -> str:
+    """Ask Mistral to engineer a Stable Diffusion image prompt."""
+    prompt = f"""[INST] Convert this student question into a Stable Diffusion image prompt.
+
+Make it visually descriptive, educational, minimalist style, white background, labeled diagram.
+Student question: "{query}"
+
+Return ONLY the image prompt. No preamble.
+[/INST]"""
+    try:
+        result = llm.create_completion(prompt, max_tokens=200, stop=["</s>", "[INST]"])
+        return result["choices"][0].get("text", query).strip()
+    except Exception as e:
+        print(f"⚠️ [SD] Prompt error: {e}")
+        return f"Educational diagram illustrating: {query}. Clean, labeled, white background."
+
+
+def generate_local_image(prompt: str) -> str | None:
+    """Generate an image via local ComfyUI API. Returns base64 PNG or None if offline."""
+    import requests, base64 as _base64, time
+    COMFYUI_URL = "http://127.0.0.1:8188"
+    try:
+        import random
+        payload = {
+            "prompt": {
+                "3": {"class_type": "KSampler", "inputs": {"cfg": 6, "denoise": 1, "latent_image": ["5", 0], "model": ["4", 0], "negative": ["7", 0], "positive": ["6", 0], "sampler_name": "dpmpp_2m_sde", "scheduler": "karras", "seed": random.randint(1, 99999999999999), "steps": 16}},
+                "4": {"class_type": "CheckpointLoaderSimple", "inputs": {"ckpt_name": "dreamshaperXL_lightningDPMSDE.safetensors"}},
+                "5": {"class_type": "EmptyLatentImage", "inputs": {"batch_size": 1, "height": 1024, "width": 1024}},
+                "6": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["4", 1], "text": prompt}},
+                "7": {"class_type": "CLIPTextEncode", "inputs": {"clip": ["4", 1], "text": "blurry, ugly, low quality, text, watermark"}},
+                "8": {"class_type": "VAEDecode", "inputs": {"samples": ["3", 0], "vae": ["4", 2]}},
+                "9": {"class_type": "SaveImage", "inputs": {"filename_prefix": "letslearn_", "images": ["8", 0]}}
+            }
+        }
+        r = requests.post(f"{COMFYUI_URL}/prompt", json=payload, timeout=5)
+        prompt_id = r.json().get("prompt_id")
+        if not prompt_id:
+            return None
+        for _ in range(60):
+            time.sleep(2)
+            history = requests.get(f"{COMFYUI_URL}/history/{prompt_id}", timeout=5).json()
+            if prompt_id in history:
+                for node_out in history[prompt_id].get("outputs", {}).values():
+                    for img_data in node_out.get("images", []):
+                        img_bytes = requests.get(f"{COMFYUI_URL}/view", params={"filename": img_data["filename"], "subfolder": img_data.get("subfolder", ""), "type": "output"}, timeout=10).content
+                        return _base64.b64encode(img_bytes).decode("utf-8")
+        return None
+    except requests.exceptions.ConnectionError:
+        print("⚠️ [SD] ComfyUI offline — skipping image generation")
+    except Exception as e:
+        print(f"⚠️ [SD] Error: {e}")
+    return None
+
+
+def generate_answer(llm, query, k=2, max_chars=1500, is_visual=False):
+
     print(f"\n💬 [CLIENT] Asked Question: {query}")
-    context = _get_context(query)
+    context = _get_context(query, max_chars=max_chars, k=k)
     
-    if not context.strip():
+    if not context.strip() and not is_visual:
         print("⚠️  [LLM] No context available, returning fallback error.")
         yield {"choices": [{"text": "I can't answer this because the database is empty. Please use /add or /load first."}]}
         return
@@ -146,15 +349,24 @@ def generate_answer(llm, query):
     print(f"🤖 [LLM] Generating answer from {len(context)} characters of context...")
     print("--------------------------------------------------")
     print("📢 [AI REPLY STREAMING TO WEBSERVER]: ", end="")
-    prompt = f"""[INST] You are an expert AI answering questions based strongly on the documents provided.
-Answer the question using ONLY the provided document context below.
-CRITICAL: Do NOT use outside knowledge. If the provided documents do not contain the answer, reply exactly with: "I cannot answer this based on the provided documents."
+    
+    # If a diagram/image is needed, instruct the LLM to give a structural explanation that will be used to build a diagram, preventing apologies.
+    question_text = query
+    if is_visual:
+        question_text = f"Explain the core concepts of this topic: '{query}'. Provide a highly structural explanation. CRITICAL: DO NOT mention that you cannot draw diagrams or images. NEVER apologize. Just explain the concepts directly and factually without any prelude."
+    prompt = f"""[INST] You are an expert AI tutor. You have been provided with document context below to help answer the user's question.
+
+CRITICAL RULES:
+1. NEVER apologize or state "I am an AI...".
+2. NEVER mention that you cannot generate images, diagrams, or flowcharts.
+3. Start answering immediately. Do not use filler introduction sentences like "Here is the explanation...".
+4. If formatting instructions are given, follow them strictly!
 
 <DOCUMENT_CONTENT>
 {context}
 </DOCUMENT_CONTENT>
 
-Question: {query}
+Question: {question_text}
 [/INST]"""
     # use yield from to properly pass the generator
     for chunk in llm.create_completion(prompt, max_tokens=800, stop=["</s>", "[INST]"], stream=True):
@@ -167,21 +379,22 @@ Question: {query}
     print("✅ [LLM] Finished generating answer.")
 
 
-def generate_flashcards(llm, count: int = 5, topic: str = "all"):
+def generate_flashcards(llm, count: int = 5, topic: str = "all", extra_context: str = ""):
     context = _get_context(topic if topic != "all" else "")
+    if extra_context:
+        context = f"NOTES/EXTRACTED CONTEXT:\n{extra_context}\n\nDOCUMENT CONTENT:\n{context}"
         
     if not context.strip():
-        yield {"choices": [{"text": "No documents found in the database. Please use /add or /load first."}]}
-        return
+        print(f"⚠️ [RAG] Warning: No document context found for topic '{topic}'. Falling back to LLM knowledge.")
 
     topic_instruction = f"CRITICAL: Focus ONLY on the topic: '{topic}'. Keep the flashcards strictly relevant to this topic based on the context." if topic != "all" else "Cover all topics in the context."
         
     prompt = f"""[INST] You are an expert educator. Extract exactly {count} distinct facts from the DOCUMENT CONTENT below and turn them into flashcards.
 {topic_instruction}
 CRITICAL INSTRUCTIONS:
-- You must ONLY use the provided DOCUMENT CONTENT.
-- DO NOT use prior knowledge, and DO NOT ask questions about this prompt or your role.
-- If there is not enough information for {count} flashcards, generate as many as you can from the text.
+- You should primarily use the provided DOCUMENT CONTENT to extract facts.
+- IMPORTANT FALLBACK: If the provided DOCUMENT CONTENT is empty, sparse, or just a syllabus outline, you MUST use your own expert knowledge to generate detailed, factual flashcards for the specified topic to reach exactly {count} flashcards.
+- DO NOT refuse to generate flashcards. Do not apologize. Just output the flashcards.
 
 Format each flashcard exactly as:
 Q: <question>
@@ -201,13 +414,13 @@ A: <answer>
     print("✅ [LLM] Finished generating flashcards.")
 
 
-def generate_quiz(llm, count: int = 5, fmt: str = "text", topic: str = "all"):
+def generate_quiz(llm, count: int = 5, fmt: str = "text", topic: str = "all", extra_context: str = ""):
     context = _get_context(topic if topic != "all" else "")
+    if extra_context:
+        context = f"NOTES/EXTRACTED CONTEXT:\n{extra_context}\n\nDOCUMENT CONTENT:\n{context}"
         
     if not context.strip():
-        # Early exit if there is strictly no document output
-        yield {"choices": [{"text": "[]" if fmt == "json" else "No documents found in the database. Please use /add or /load first."}]}
-        return
+        print(f"⚠️ [RAG] Warning: No document context found for topic '{topic}'. Falling back to LLM knowledge.")
 
     topic_instruction = f"CRITICAL: Focus ONLY on the topic: '{topic}'. Keep the questions strictly relevant to this topic based on the context." if topic != "all" else "Cover all topics in the context."
 
@@ -235,12 +448,16 @@ Q<n>: <question>
 - <Wrong answer>
 - <Wrong answer>"""
 
-    prompt = f"""[INST] You are an expert quiz generator. Based on the DOCUMENT CONTENT below, create exactly {count} multiple-choice questions. 
+    prompt = f"""[INST] You are an expert quiz generator. Your absolute priority is to create exactly {count} multiple-choice questions.
 {topic_instruction}
+
 CRITICAL INSTRUCTIONS:
-- You must ONLY use the provided DOCUMENT CONTENT.
-- DO NOT use prior knowledge, and DO NOT ask questions about this prompt or your role.
-- Every single question AND answer must be directly supported by the text.
+- Generate ONLY conceptual, technical, or analytical questions.
+- STRICTLY FORBIDDEN: Do not generate questions about books, authors, references, syllabus structure, page numbers, or administrative details.
+- IF the provided DOCUMENT CONTENT is useful, base your questions on it.
+- IF the provided DOCUMENT CONTENT is empty, sparse, mostly an outline, or lacks enough detail for {count} questions, you MUST completely IGNORE IT and rely entirely on your own expert knowledge.
+- UNDER NO CIRCUMSTANCES should you refuse to generate the quiz. It is STRICTLY FORBIDDEN to output an empty array (e.g., []).
+- Ensure all questions are highly relevant, educational, and accurately match the required JSON or text format.
 
 {format_instruction}
 
@@ -292,12 +509,23 @@ def generate_notes(llm, topic: str):
         yield {"choices": [{"text": "No documents found in the database covering this topic."}]}
         return
         
-    prompt = f"""[INST] You are an expert tutor. Based on the DOCUMENT CONTENT below, generate comprehensive study notes exclusively about the topic: '{topic}'.
-Format the notes nicely using markdown (headers, bullet points, bold text).
-CRITICAL INSTRUCTIONS:
+    prompt = f"""[INST] You are an expert tutor. Based on the DOCUMENT CONTENT below, generate highly detailed and comprehensive study notes exclusively about the topic: '{topic}'.
+Format the notes strictly using Github Flavored Markdown (GFM). 
+
+CRITICAL FORMATTING RULES:
+- IMPORTANT: DO NOT wrap your entire response inside ```markdown or ``` tags. Start your response directly with the # title.
+- Use # for the main title, ## for sections, and ### for subsections.
+- DO NOT wrap standard text, headings, or bullet points in triple backticks (```).
+- ONLY use code blocks (```) if you are providing a snippet of actual programming code or raw data formatting.
+- Use properly formatted GFM tables for structured data (e.g. | Header | Header |).
+- Use - or * for bullet points. Ensure high information density.
+- Use **bold** and _italics_ for emphasis.
+
+INSTRUCTIONS:
 - You must ONLY use the provided DOCUMENT CONTENT.
 - Do NOT make up external information.
-- Provide a summary overview, followed by key points and details.
+- Ensure the output is valid Markdown that can be parsed by standard GFM parsers.
+- Make it visually appealing and well-structured.
 
 <DOCUMENT_CONTENT>
 {context}
@@ -311,4 +539,66 @@ CRITICAL INSTRUCTIONS:
         yield chunk
     print("\n--------------------------------------------------")
     print("✅ [LLM] Finished generating notes.")
+
+
+def generate_summary(llm):
+    """Generates a structured markdown summary of all uploaded documents."""
+    context = _get_context(limit=20, max_chars=4000)
+        
+    if not context.strip():
+        yield {"choices": [{"text": "No documents found in the database. Please use /add or /load first."}]}
+        return
+        
+    prompt = f"""[INST] You are an expert analyst. Read the COMPLETE DOCUMENT CONTENT below and generate a high-level, comprehensive summary of all the material.
+Format the summary strictly using Github Flavored Markdown (GFM).
+
+CRITICAL FORMATTING RULES:
+- IMPORTANT: DO NOT wrap your entire response inside ```markdown or ``` tags. Start your response directly with the # title.
+- Use # for the main title, ## for sections, and ### for subsections.
+- DO NOT wrap standard text, headings, or bullet points in triple backticks (```).
+- ONLY use code blocks (```) if you are providing a snippet of actual programming code or raw data formatting.
+- Use properly formatted GFM tables for structured data (e.g. | Header | Header |).
+- Use - or * for bullet points.
+- Use **bold** and _italics_ for emphasis.
+
+INSTRUCTIONS:
+- You must ONLY use the provided DOCUMENT CONTENT.
+- Do NOT make up external information.
+- Ensure the output is valid Markdown that can be parsed by standard GFM parsers.
+- Make it visually appealing and well-structured.
+
+<DOCUMENT_CONTENT>
+{context}
+</DOCUMENT_CONTENT>
+[/INST]"""
+    print(f"\n📢 [AI GENERATING SUMMARY STREAMING TO WEBSERVER]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=1500, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished generating summary.")
+
+def generate_contextual_answer(llm, selected_text: str, question: str):
+    """Answers a specific doubt based explicitly on a selected piece of text."""
+    prompt = f"""[INST] You are a highly intelligent tutor. The user is reading their study material and has highlighted the following text:
+
+<SELECTED_TEXT>
+{selected_text}
+</SELECTED_TEXT>
+
+The user has a doubt/question regarding this exact text:
+"{question}"
+
+Provide a clear, helpful, and concise answer to their question using the provided text. Don't mention "based on the selected text", just answer the question in a friendly tone. Use markdown if helpful. [/INST]"""
+    
+    print(f"\n📢 [AI CONTEXTUAL CHAT STREAMING]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=1000, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished contextual answer.")
 

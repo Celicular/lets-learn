@@ -1,8 +1,8 @@
 import React from 'react';
 import { motion } from 'framer-motion';
-import { Brain, Target, Users, Database } from 'lucide-react';
+import { Globe, Video, Eye, Languages } from 'lucide-react';
 
-const CapabilityCard = ({ icon: Icon, title, items, delay, iconColor, dotColor, bgTheme }) => (
+const FutureCard = ({ icon: Icon, title, items, delay, iconColor, dotColor, bgTheme }) => (
   <motion.div 
     initial={{ opacity: 0, y: 30 }}
     animate={{ opacity: 1, y: 0 }}
@@ -32,55 +32,55 @@ const CapabilityCard = ({ icon: Icon, title, items, delay, iconColor, dotColor, 
   </motion.div>
 );
 
-const Slide3 = () => {
+const Slide3_2 = () => {
   return (
     <div className="w-full h-full max-w-7xl mx-auto flex flex-col justify-center py-6 px-4">
       <div className="text-center mb-12">
-        <h2 className="text-5xl lg:text-6xl font-black text-slate-900 mb-4 tracking-tighter uppercase inline-block bg-yellow-400 px-6 py-2 border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] rotate-[-1deg]">
-            Platform Ecosystem
+        <h2 className="text-5xl lg:text-6xl font-black text-slate-900 mb-4 tracking-tighter uppercase inline-block bg-pink-400 px-6 py-2 border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] rotate-[1deg]">
+            Future Roadmap
         </h2>
-        <p className="text-xl text-slate-800 font-bold mt-6">Built for scale, intelligence, and deep learning.</p>
+        <p className="text-xl text-slate-800 font-bold mt-6">Next-generation features pushing the boundaries of AI education.</p>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 px-4">
-        <CapabilityCard 
-          icon={Brain} title="Conversational Omniscience" delay={0.1}
-          iconColor="text-violet-500" dotColor="bg-violet-500" bgTheme="yellow-400"
+        <FutureCard 
+          icon={Globe} title="Web Integration" delay={0.1}
+          iconColor="text-blue-500" dotColor="bg-blue-500" bgTheme="blue-400"
           items={[
-            "Talk to your documents like a master tutor",
-            "Answers instantly synthesized from 1000s of pages",
-            "Sub-second voice and chat latency",
-            "Zero hallucinations, 100% textbook accurate"
+            "MCP-based Google Search",
+            "Real-time internet context",
+            "Live fact-checking",
+            "Dynamic syllabus updates"
           ]}
         />
-        <CapabilityCard 
-          icon={Target} title="Hyper-Visual Learning" delay={0.2}
-          iconColor="text-coral-500" dotColor="bg-coral-500" bgTheme="coral-400"
+        <FutureCard 
+          icon={Video} title="Autonomous Tutors" delay={0.2}
+          iconColor="text-pink-500" dotColor="bg-pink-500" bgTheme="pink-400"
           items={[
-            "Auto-generates stunning mental models",
-            "Real-time textbook illustrations on demand",
-            "Complex data reduced to simple visual maps",
-            "Shatters reading fatigue instantly"
+            "Proactive learning interventions",
+            "Continuous memory synthesis",
+            "Automated curriculum building",
+            "Multi-agent study simulations"
           ]}
         />
-        <CapabilityCard 
-          icon={Users} title="Adaptive Drilling" delay={0.3}
-          iconColor="text-emerald-500" dotColor="bg-emerald-500" bgTheme="emerald-400"
+        <FutureCard 
+          icon={Eye} title="Advanced Vision" delay={0.3}
+          iconColor="text-amber-500" dotColor="bg-amber-500" bgTheme="amber-400"
           items={[
-            "Algorithmic flashcards that learn your flaws",
-            "Infinite personalized mock exams",
-            "Predictive weak-point targeting",
-            "Gamified progression to mastery"
+            "Visual QA on live camera",
+            "Handwritten math solving",
+            "Science diagram analysis",
+            "Spatial screen awareness"
           ]}
         />
-        <CapabilityCard 
-          icon={Database} title="Absolute Privacy Shield" delay={0.4}
-          iconColor="text-cyan-500" dotColor="bg-cyan-500" bgTheme="cyan-400"
+        <FutureCard 
+          icon={Languages} title="Global Collab" delay={0.4}
+          iconColor="text-rose-500" dotColor="bg-rose-500" bgTheme="rose-400"
           items={[
-            "Fully detached from the public internet",
-            "Military-grade local data isolation",
-            "Zero telemetry, zero tracking, zero cloud",
-            "Your learning IP belongs entirely to you"
+            "Real-time voice translation",
+            "Peer-to-peer study rooms",
+            "Personalized learning tracks",
+            "Cross-lingual RAG queries"
           ]}
         />
       </div>
@@ -88,4 +88,4 @@ const Slide3 = () => {
   );
 };
 
-export default Slide3;
+export default Slide3_2;

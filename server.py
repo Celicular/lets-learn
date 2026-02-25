@@ -1,6 +1,8 @@
 import os
 import json
 import shutil
+import asyncio
+import datetime
 from fastapi import FastAPI, UploadFile, File, HTTPException
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -8,7 +10,11 @@ from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from typing import List
 
-from rag_core import load_llm, add_docs, chunk_text, generate_answer, clear_db, generate_flashcards, generate_quiz, generate_topics
+from rag_core import (
+    load_llm, add_docs, chunk_text, generate_answer, clear_db,
+    generate_flashcards, generate_quiz, generate_topics, generate_summary,
+    generate_contextual_answer, route_visual, generate_mermaid, create_sd_prompt, generate_local_image
+)
 from doc_parser import parse_document
 
 @asynccontextmanager
@@ -79,10 +85,19 @@ def load_projects_data():
         changed = False
         for proj in data.get("projects", {}).values():
             if "cache" not in proj:
-                proj["cache"] = {"topics": None, "quizzes": {}, "flashcards": {}, "notes": {}}
+                proj["cache"] = {"topics": None, "quizzes": {}, "flashcards": {}, "notes": {}, "summary": None}
                 changed = True
             elif "notes" not in proj["cache"]:
                 proj["cache"]["notes"] = {}
+                changed = True
+            if "summary" not in proj["cache"]:
+                proj["cache"]["summary"] = None
+                changed = True
+            if "results" not in proj:
+                proj["results"] = []
+                changed = True
+            if "images" not in proj.get("cache", {}):
+                proj.setdefault("cache", {})["images"] = {}
                 changed = True
         if changed:
             save_projects_data(data)
@@ -102,11 +117,20 @@ class ProjectCreate(BaseModel):
 
 class ChatRequest(BaseModel):
     query: str
+    k: int = 2
+    max_chars: int = 1500
+
+class ContextualChatRequest(BaseModel):
+    query: str
+    selected_text: str
 
 class QuizRequest(BaseModel):
     count: int = 5
     fmt: str = "json"
     topic: str = "all"
+
+class ResultSaveRequest(BaseModel):
+    result: dict
 
 class FlashcardRequest(BaseModel):
     count: int = 5
@@ -134,8 +158,10 @@ async def create_project(req: ProjectCreate):
             "topics": None,
             "quizzes": {},
             "flashcards": {},
-            "notes": {}
-        }
+            "notes": {},
+            "summary": None
+        },
+        "results": []
     }
     save_projects_data(data)
     
@@ -201,6 +227,10 @@ async def upload_file(project_name: str, file: UploadFile = File(...)):
     else:
         raise HTTPException(status_code=500, detail="Failed to parse text format from document uploaded.")
 
+import threading
+# Global lock to prevent concurrent GGML inference crashing
+llm_lock = threading.Lock()
+
 @app.post("/chat")
 async def chat(req: ChatRequest):
     """Streams the real-time AI reply text directly to the frontend based on the currently loaded memory."""
@@ -208,13 +238,120 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail="LLM is not loaded. Ensure Mistral model exists.")
     if not req.query.strip():
         raise HTTPException(status_code=400, detail="Query string cannot be empty.")
+    if llm_lock.locked():
+        raise HTTPException(status_code=429, detail="AI is currently processing another request.")
         
     def stream_generator():
-        stream = generate_answer(llm, req.query)
-        for chunk in stream:
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                yield text
+        with llm_lock:
+            stream = generate_answer(llm, req.query, k=req.k, max_chars=req.max_chars)
+            for chunk in stream:
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    yield text
+                
+    return StreamingResponse(stream_generator(), media_type="text/plain")
+
+
+class VisualChatRequest(BaseModel):
+    query: str
+    project_name: str
+    k: int = 2
+    max_chars: int = 1500
+
+
+@app.post("/chat/visual")
+async def chat_visual(req: VisualChatRequest):
+    """Local multimodal streaming chat: text + Mermaid diagram or SD image."""
+    if not llm:
+        raise HTTPException(status_code=500, detail="LLM is not loaded.")
+    if not req.query.strip():
+        raise HTTPException(status_code=400, detail="Query cannot be empty.")
+    if llm_lock.locked():
+        raise HTTPException(status_code=429, detail="AI is currently processing another request. Please wait.")
+
+    async def stream():
+        import json as _json
+
+        # Step 1 — Route query
+        route = route_visual(llm, req.query)
+
+        # Step 2 — Stream the text explanation first
+        full_text = ""
+        if route in ["text", "diagram"]:
+            with llm_lock:
+                text_stream = generate_answer(llm, req.query, k=req.k, max_chars=req.max_chars, is_visual=(route == "diagram"))
+                for chunk in text_stream:
+                    text = chunk["choices"][0].get("text", "")
+                    if text:
+                        full_text += text
+                        yield _json.dumps({"type": "text", "content": text}) + "\n"
+
+        # Step 3 — Generate Diagram/Image synchronously using the newly generated text context
+        if route == "diagram":
+            yield _json.dumps({"type": "new_message"}) + "\n"
+            mermaid_code = generate_mermaid(llm, req.query, context=full_text)
+            if mermaid_code:
+                yield _json.dumps({"type": "mermaid", "content": mermaid_code}) + "\n"
+        elif route == "visual":
+            yield _json.dumps({"type": "text", "content": "🎨 Generating image... (This will take approx 15-20 seconds, please wait!)\n"}) + "\n"
+            sd_prompt = create_sd_prompt(llm, req.query)
+
+        # Step 4 — Generate SD Image in the background after text starts/finishes
+        if route == "visual" and sd_prompt:
+            img_b64 = await asyncio.to_thread(generate_local_image, sd_prompt)
+            if img_b64:
+                file_path = None
+                try:
+                    import base64 as _b64
+                    images_dir = os.path.join("data", req.project_name, "images")
+                    os.makedirs(images_dir, exist_ok=True)
+                    ts = datetime.datetime.now().strftime("%Y%m%d_%H%M%S")
+                    safe = "".join(c if c.isalnum() else "_" for c in req.query[:30])
+                    file_path = os.path.join(images_dir, f"{ts}_{safe}.png")
+                    with open(file_path, "wb") as f:
+                        f.write(_b64.b64decode(img_b64))
+                    data = load_projects_data()
+                    if req.project_name in data["projects"]:
+                        data["projects"][req.project_name]["cache"]["images"][req.query[:60]] = {
+                            "path": file_path, "prompt": sd_prompt,
+                            "created_at": datetime.datetime.now().isoformat()
+                        }
+                        save_projects_data(data)
+                except Exception as e:
+                    print(f"⚠️ [SD] Save error: {e}")
+                yield _json.dumps({"type": "image", "content": img_b64, "path": file_path or ""}) + "\n"
+            else:
+                yield _json.dumps({"type": "text", "content": "\n*(Image generation unavailable — is ComfyUI running?)*"}) + "\n"
+
+    return StreamingResponse(stream(), media_type="application/x-ndjson")
+
+
+@app.get("/projects/{project_name}/images")
+async def list_project_images(project_name: str):
+    """Returns all saved image records for a given project."""
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+    images = data["projects"][project_name].get("cache", {}).get("images", {})
+    return {"project": project_name, "images": images}
+
+@app.post("/projects/{project_name}/chat/contextual")
+async def chat_contextual(project_name: str, req: ContextualChatRequest):
+    """Streams the real-time AI reply text directly to the frontend based on explicitly selected text."""
+    if not llm:
+        raise HTTPException(status_code=500, detail="LLM is not loaded. Ensure Mistral model exists.")
+    if not req.query.strip() or not req.selected_text.strip():
+        raise HTTPException(status_code=400, detail="Query and selected_text strings cannot be empty.")
+    if llm_lock.locked():
+        raise HTTPException(status_code=429, detail="AI is currently processing another request.")
+        
+    def stream_generator():
+        with llm_lock:
+            stream = generate_contextual_answer(llm, req.selected_text, req.query)
+            for chunk in stream:
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    yield text
                 
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
@@ -238,9 +375,15 @@ async def generate_quiz_endpoint(project_name: str, req: QuizRequest):
         cached = cache["quizzes"][topic_key]
         return StreamingResponse(iter([cached]), media_type="application/json" if req.fmt == "json" else "text/plain")
 
+    extra_context = ""
+    if topic_key == "all":
+        extra_context = "\n".join(cache.get("notes", {}).values())
+    else:
+        extra_context = cache.get("notes", {}).get(topic_key, "")
+
     def stream_generator():
         full_response = []
-        for chunk in generate_quiz(llm, req.count, req.fmt, req.topic):
+        for chunk in generate_quiz(llm, req.count, req.fmt, req.topic, extra_context=extra_context):
             text = chunk["choices"][0].get("text", "")
             if text:
                 full_response.append(text)
@@ -273,9 +416,15 @@ async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest)
         cached = cache["flashcards"][topic_key]
         return StreamingResponse(iter([cached]), media_type="text/plain")
 
+    extra_context = ""
+    if topic_key == "all":
+        extra_context = "\n".join(cache.get("notes", {}).values())
+    else:
+        extra_context = cache.get("notes", {}).get(topic_key, "")
+
     def stream_generator():
         full_response = []
-        for chunk in generate_flashcards(llm, req.count, req.topic):
+        for chunk in generate_flashcards(llm, req.count, req.topic, extra_context=extra_context):
             text = chunk["choices"][0].get("text", "")
             if text:
                 full_response.append(text)
@@ -352,6 +501,53 @@ async def extract_topics_endpoint(project_name: str):
 
     return StreamingResponse(stream_generator(), media_type="application/json")
 
+
+@app.post("/projects/{project_name}/summary")
+async def generate_summary_endpoint(project_name: str):
+    """Generates a summary for all uploaded documents in a project. Caches the result."""
+    from rag_core import generate_summary
+    print(f"\n📥 [REQUEST] POST /projects/{project_name}/summary")
+    if not llm:
+        print("❌ [ERROR] LLM is not loaded.")
+        raise HTTPException(status_code=500, detail="LLM is not loaded.")
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    cache = data["projects"][project_name]["cache"]
+
+    if cache.get("summary"):
+        print(f"⚡ [CACHE] Returning cached summary for project: '{project_name}'")
+        cached = cache["summary"]
+        return StreamingResponse(iter([cached]), media_type="text/plain")
+
+    def stream_generator():
+        full_response = []
+        for chunk in generate_summary(llm):
+            text = chunk["choices"][0].get("text", "")
+            if text:
+                full_response.append(text)
+                yield text
+        result = data.copy()
+        result["projects"][project_name]["cache"]["summary"] = "".join(full_response)
+        save_projects_data(result)
+        print(f"💾 [CACHE] Saved summary for project: '{project_name}'")
+
+    return StreamingResponse(stream_generator(), media_type="text/plain")
+
+@app.post("/projects/{project_name}/results")
+async def save_project_results(project_name: str, req: ResultSaveRequest):
+    """Saves a quiz result to the project's history."""
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    if "results" not in data["projects"][project_name]:
+        data["projects"][project_name]["results"] = []
+        
+    data["projects"][project_name]["results"].append(req.result)
+    save_projects_data(data)
+    return {"message": "Result saved successfully"}
 # Optional: Run directly with `python server.py`
 if __name__ == "__main__":
     import uvicorn
