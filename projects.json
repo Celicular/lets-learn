@@ -1,0 +1,19 @@
+{
+    "projects": {
+        "Biology": {
+            "loaded_files": [
+                "data\\Biology\\test2.pdf"
+            ]
+        },
+        "test": {
+            "loaded_files": [
+                "data\\test\\test2.pdf"
+            ]
+        },
+        "business": {
+            "loaded_files": [
+                "data\\business\\test2.pdf"
+            ]
+        }
+    }
+}

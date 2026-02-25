@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+@theme {
+  --color-indigo-core: #5B5FEF;
+  --color-cyan-core: #4FD1C5;
+  --color-violet-core: #8B5CF6;
+  --color-lime-glow: #A3E635;
+  --color-coral-pop: #FB7185;
+  --color-warm-yellow: #FACC15;
+
+  --color-neu-bg: #e6ebf5;
+  --color-neu-shadow-dark: #c8cdd6;
+  --color-neu-shadow-light: #ffffff;
+}
+
+@layer base {
+  body {
+    background: linear-gradient(135deg, #eef2ff, #e0f2fe);
+    color: #1e293b;
+    margin: 0;
+    padding: 0;
+    font-family: 'Inter', system-ui, sans-serif;
+    overflow: hidden;
+  }
+}
+
+@layer utilities {
+  .neu-panel {
+    background: var(--color-neu-bg);
+    box-shadow: 8px 8px 16px var(--color-neu-shadow-dark), 
+                -8px -8px 16px var(--color-neu-shadow-light);
+    border-radius: 20px;
+    transition: all 0.3s ease;
+  }
+  
+  .neu-panel:hover {
+    box-shadow: 10px 10px 20px var(--color-neu-shadow-dark), 
+                -10px -10px 20px var(--color-neu-shadow-light);
+    transform: translateY(-2px);
+  }
+
+  .neu-pressed {
+    background: var(--color-neu-bg);
+    box-shadow: inset 6px 6px 12px var(--color-neu-shadow-dark), 
+                inset -6px -6px 12px var(--color-neu-shadow-light);
+    border-radius: 20px;
+  }
+
+  .glass-panel {
+    backdrop-filter: blur(20px);
+    background: rgba(255, 255, 255, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    border-radius: 20px;
+    box-shadow: 0 4px 30px rgba(0, 0, 0, 0.05);
+  }
+
+  .font-pencil {
+    font-family: 'Caveat', cursive;
+    font-size: 1.4rem;
+    line-height: 1.6;
+    color: #4338ca;
+  }
+
+  .skeu-notebook {
+    background-color: #fdfbf7;
+    background-image: linear-gradient(#cbd5e1 1px, transparent 1px);
+    background-size: 100% 2.5rem;
+    background-position: 0 2.5rem;
+    border-left: 4px solid #f87171;
+    box-shadow: 2px 4px 10px rgba(0,0,0,0.08);
+    border-radius: 4px 12px 12px 4px;
+    padding-top: 0.5rem;
+  }
+
+  .sphere-glow {
+    box-shadow: 0 0 40px var(--color-indigo-core), inset 0 0 20px var(--color-cyan-core);
+    animation: pulse-glow 4s ease-in-out infinite;
+  }
+}
+
+@keyframes pulse-glow {
+  0% { box-shadow: 0 0 40px var(--color-indigo-core), inset 0 0 20px var(--color-cyan-core); }
+  50% { box-shadow: 0 0 60px var(--color-violet-core), inset 0 0 30px var(--color-cyan-core); }
+  100% { box-shadow: 0 0 40px var(--color-indigo-core), inset 0 0 20px var(--color-cyan-core); }
+}
+
+@keyframes float {
+  0% { transform: translateY(0px) }
+  50% { transform: translateY(-15px) }
+  100% { transform: translateY(0px) }
+}
