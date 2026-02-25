@@ -1,0 +1,12 @@
+fastapi
+uvicorn
+pydantic
+python-multipart
+chromadb
+llama-cpp-python
+sentence-transformers
+transformers
+pymupdf
+python-pptx
+huggingface_hub
+torch
