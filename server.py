@@ -68,13 +68,25 @@ os.makedirs(MODELS_DIR, exist_ok=True)
 llm = None
 
 def load_projects_data():
-    """Load projects file mapping."""
+    """Load projects file mapping with backward compatible cache migration."""
     if os.path.exists(PROJECTS_FILE):
         with open(PROJECTS_FILE, 'r') as f:
             try:
-                return json.load(f)
+                data = json.load(f)
             except json.JSONDecodeError:
                 return {"projects": {}}
+        # Migrate existing projects that don't have a cache key
+        changed = False
+        for proj in data.get("projects", {}).values():
+            if "cache" not in proj:
+                proj["cache"] = {"topics": None, "quizzes": {}, "flashcards": {}, "notes": {}}
+                changed = True
+            elif "notes" not in proj["cache"]:
+                proj["cache"]["notes"] = {}
+                changed = True
+        if changed:
+            save_projects_data(data)
+        return data
     return {"projects": {}}
 
 def save_projects_data(data):
@@ -100,7 +112,8 @@ class FlashcardRequest(BaseModel):
     count: int = 5
     topic: str = "all"
 
-# Endpoints
+class NotesRequest(BaseModel):
+    topic: str
 @app.get("/projects")
 async def get_projects():
     """Returns a list of all projects and their loaded files."""
@@ -115,7 +128,15 @@ async def create_project(req: ProjectCreate):
     if project_name in data["projects"]:
         raise HTTPException(status_code=400, detail="Project already exists")
     
-    data["projects"][project_name] = {"loaded_files": []}
+    data["projects"][project_name] = {
+        "loaded_files": [],
+        "cache": {
+            "topics": None,
+            "quizzes": {},
+            "flashcards": {},
+            "notes": {}
+        }
+    }
     save_projects_data(data)
     
     # Create the physical folder
@@ -197,49 +218,141 @@ async def chat(req: ChatRequest):
                 
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
-@app.post("/quiz")
-async def generate_quiz_endpoint(req: QuizRequest):
-    """Streams a generated quiz strictly formatted as text or JSON."""
+@app.post("/projects/{project_name}/quiz")
+async def generate_quiz_endpoint(project_name: str, req: QuizRequest):
+    """Generates a quiz for the given project. Caches result by topic (not 'all')."""
+    print(f"\n📥 [REQUEST] POST /projects/{project_name}/quiz | Count: {req.count} | Topic: '{req.topic}'")
     if not llm:
+        print("❌ [ERROR] LLM is not loaded.")
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
-        
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    topic_key = req.topic.lower().strip()
+    cache = data["projects"][project_name]["cache"]
+
+    # Return from cache if already generated for this specific topic
+    if topic_key != "all" and topic_key in cache["quizzes"]:
+        print(f"⚡ [CACHE] Returning cached quiz for topic: '{topic_key}'")
+        cached = cache["quizzes"][topic_key]
+        return StreamingResponse(iter([cached]), media_type="application/json" if req.fmt == "json" else "text/plain")
+
     def stream_generator():
-        stream = generate_quiz(llm, req.count, req.fmt, req.topic)
-        for chunk in stream:
+        full_response = []
+        for chunk in generate_quiz(llm, req.count, req.fmt, req.topic):
             text = chunk["choices"][0].get("text", "")
-            if text: yield text
-            
+            if text:
+                full_response.append(text)
+                yield text
+        # Save to cache (only for specific topics, not 'all')
+        if topic_key != "all":
+            result = data.copy()
+            result["projects"][project_name]["cache"]["quizzes"][topic_key] = "".join(full_response)
+            save_projects_data(result)
+            print(f"💾 [CACHE] Saved quiz for topic: '{topic_key}'")
+
     return StreamingResponse(stream_generator(), media_type="application/json" if req.fmt == "json" else "text/plain")
 
-@app.post("/flashcards")
-async def generate_flashcards_endpoint(req: FlashcardRequest):
-    """Streams generated flashcards in Q&A format."""
+@app.post("/projects/{project_name}/flashcards")
+async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest):
+    """Generates flashcards for the given project. Caches result by topic (not 'all')."""
+    print(f"\n📥 [REQUEST] POST /projects/{project_name}/flashcards | Count: {req.count} | Topic: '{req.topic}'")
     if not llm:
+        print("❌ [ERROR] LLM is not loaded.")
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
-        
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    topic_key = req.topic.lower().strip()
+    cache = data["projects"][project_name]["cache"]
+
+    if topic_key in cache["flashcards"]:
+        print(f"⚡ [CACHE] Returning cached flashcards for topic: '{topic_key}'")
+        cached = cache["flashcards"][topic_key]
+        return StreamingResponse(iter([cached]), media_type="text/plain")
+
     def stream_generator():
-        stream = generate_flashcards(llm, req.count, req.topic)
-        for chunk in stream:
+        full_response = []
+        for chunk in generate_flashcards(llm, req.count, req.topic):
             text = chunk["choices"][0].get("text", "")
-            if text: yield text
-            
+            if text:
+                full_response.append(text)
+                yield text
+        result = data.copy()
+        result["projects"][project_name]["cache"]["flashcards"][topic_key] = "".join(full_response)
+        save_projects_data(result)
+        print(f"💾 [CACHE] Saved flashcards for topic: '{topic_key}'")
+
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
-@app.get("/topics")
-async def extract_topics_endpoint():
-    """Extracts the most important topics from the active memory context. Returns streaming JSON array."""
+@app.post("/projects/{project_name}/notes")
+async def generate_notes_endpoint(project_name: str, req: NotesRequest):
+    """Generates study notes for the given topic. Caches result by topic."""
+    from rag_core import generate_notes
+    print(f"\n📥 [REQUEST] POST /projects/{project_name}/notes | Topic: '{req.topic}'")
     if not llm:
+        print("❌ [ERROR] LLM is not loaded.")
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
-        
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    topic_key = req.topic.lower().strip()
+    cache = data["projects"][project_name]["cache"]
+
+    if topic_key in cache["notes"]:
+        print(f"⚡ [CACHE] Returning cached notes for topic: '{topic_key}'")
+        cached = cache["notes"][topic_key]
+        return StreamingResponse(iter([cached]), media_type="text/plain")
+
     def stream_generator():
-        stream = generate_topics(llm)
-        for chunk in stream:
+        full_response = []
+        for chunk in generate_notes(llm, req.topic):
             text = chunk["choices"][0].get("text", "")
-            if text: yield text
-            
+            if text:
+                full_response.append(text)
+                yield text
+        result = data.copy()
+        result["projects"][project_name]["cache"]["notes"][topic_key] = "".join(full_response)
+        save_projects_data(result)
+        print(f"💾 [CACHE] Saved notes for topic: '{topic_key}'")
+
+    return StreamingResponse(stream_generator(), media_type="text/plain")
+
+@app.get("/projects/{project_name}/topics")
+async def extract_topics_endpoint(project_name: str):
+    """Extracts key topics from the project memory. Caches result per project."""
+    print(f"\n📥 [REQUEST] GET /projects/{project_name}/topics")
+    if not llm:
+        print("❌ [ERROR] LLM is not loaded.")
+        raise HTTPException(status_code=500, detail="LLM is not loaded.")
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+
+    cache = data["projects"][project_name]["cache"]
+
+    if cache["topics"] is not None:
+        print(f"⚡ [CACHE] Returning cached topics for project: '{project_name}'")
+        return StreamingResponse(iter([cache["topics"]]), media_type="application/json")
+
+    def stream_generator():
+        full_response = []
+        for chunk in generate_topics(llm):
+            text = chunk["choices"][0].get("text", "")
+            if text:
+                full_response.append(text)
+                yield text
+        result = data.copy()
+        result["projects"][project_name]["cache"]["topics"] = "".join(full_response)
+        save_projects_data(result)
+        print(f"💾 [CACHE] Saved topics for project: '{project_name}'")
+
     return StreamingResponse(stream_generator(), media_type="application/json")
 
 # Optional: Run directly with `python server.py`
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, log_level="warning")
+    uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True, log_level="info")

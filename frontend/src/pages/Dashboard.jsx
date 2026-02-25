@@ -77,7 +77,7 @@ export default function Dashboard() {
       </div>
 
       {/* Mini Slide Index */}
-      <div className="absolute top-8 right-10 z-50 flex space-x-3 bg-white/50 p-3 rounded-full backdrop-blur-md shadow-sm border border-white">
+      <div className="absolute top-4 right-4 md:top-8 md:right-10 z-50 flex space-x-3 bg-white/50 p-2 md:p-3 rounded-full backdrop-blur-md shadow-sm border border-white">
         {slides.map((_, idx) => (
           <div 
             key={idx} 
@@ -103,23 +103,23 @@ export default function Dashboard() {
       </AnimatePresence>
 
       {/* Controls */}
-      <div className="absolute bottom-10 left-10 z-50">
+      <div className="absolute bottom-4 left-4 md:bottom-10 md:left-10 z-50">
         <button 
           onClick={prevSlide}
           disabled={currentSlide === 0}
-          className={`neu-panel p-4 flex items-center justify-center rounded-2xl ${currentSlide === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50'}`}
+          className={`neu-panel p-3 md:p-4 flex items-center justify-center rounded-2xl ${currentSlide === 0 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50'}`}
         >
-          <ChevronLeft className="w-8 h-8 text-indigo-600" />
+          <ChevronLeft className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
         </button>
       </div>
 
-      <div className="absolute bottom-10 right-10 z-50">
+      <div className="absolute bottom-4 right-4 md:bottom-10 md:right-10 z-50">
         <button 
           onClick={nextSlide}
           disabled={currentSlide === slides.length - 1}
-          className={`neu-panel p-4 flex items-center justify-center rounded-2xl ${currentSlide === slides.length - 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50'}`}
+          className={`neu-panel p-3 md:p-4 flex items-center justify-center rounded-2xl ${currentSlide === slides.length - 1 ? 'opacity-40 cursor-not-allowed' : 'cursor-pointer hover:bg-indigo-50'}`}
         >
-          <ChevronRight className="w-8 h-8 text-indigo-600" />
+          <ChevronRight className="w-6 h-6 md:w-8 md:h-8 text-indigo-600" />
         </button>
       </div>
     </div>

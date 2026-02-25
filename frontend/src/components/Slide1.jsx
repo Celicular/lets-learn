@@ -1,10 +1,14 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { Play, Brain, BookOpen, Target, Network } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
 
-const Slide1 = () => (
-  <div className="w-full h-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between relative">
-    <div className="flex-1 space-y-8 z-10 mt-12 md:mt-0">
+const Slide1 = () => {
+  const navigate = useNavigate();
+  
+  return (
+    <div className="w-full h-full max-w-7xl mx-auto flex flex-col md:flex-row items-center justify-between relative px-4 text-center md:text-left">
+      <div className="flex-1 space-y-8 z-10 mt-12 md:mt-0 flex flex-col items-center md:items-start">
       <motion.h1 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -22,6 +26,7 @@ const Slide1 = () => (
         Upload slides, PDFs, notes, or question banks and instantly generate adaptive quizzes, flashcards, and personalized learning paths powered by AI.
       </motion.p>
       <motion.button 
+        onClick={() => navigate('/fulldemo')}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.6 }}
@@ -74,6 +79,7 @@ const Slide1 = () => (
       </motion.div>
     </div>
   </div>
-);
+  );
+};
 
 export default Slide1;

@@ -102,7 +102,7 @@ def chunk_text(text, size=500, overlap=100):
     return chunks
 
 
-def retrieve(query, k=5):
+def retrieve(query, k=2):
     print(f"🔍 [RAG] Searching memory for: '{query}'")
     if collection.count() == 0:
         print("⚠️  [RAG] Vector DB is empty. Returning NO context.")
@@ -120,19 +120,18 @@ def retrieve(query, k=5):
     return []
 
 
-def _get_context(query=""):
+def _get_context(query="", limit=10, max_chars=3000):
     if collection.count() == 0:
         return ""
     
     if query:
         docs = retrieve(query)
     else:
-        # If no query provided (e.g. general flashcards), just grab some documents
-        # Because we can't search an empty string efficiently, we use .get()
-        res = collection.get(limit=5)
+        res = collection.get(limit=limit)
         docs = res.get("documents", [])
         
-    return "\n\n---\n\n".join(docs) if docs else ""
+    context = "\n\n---\n\n".join(docs) if docs else ""
+    return context[:max_chars] if len(context) > max_chars else context
 
 
 def generate_answer(llm, query):
@@ -192,7 +191,14 @@ A: <answer>
 {context}
 </DOCUMENT_CONTENT>
 [/INST]"""
-    yield from llm.create_completion(prompt, max_tokens=1200, stop=["</s>", "[INST]"], stream=True)
+    print(f"\n📢 [AI GENERATING FLASHCARDS STREAMING TO WEBSERVER]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=1200, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished generating flashcards.")
 
 
 def generate_quiz(llm, count: int = 5, fmt: str = "text", topic: str = "all"):
@@ -242,29 +248,67 @@ CRITICAL INSTRUCTIONS:
 {context}
 </DOCUMENT_CONTENT>
 [/INST]"""
-    yield from llm.create_completion(prompt, max_tokens=2000, stop=["</s>", "[INST]"], stream=True)
+    print(f"\n📢 [AI GENERATING QUIZ STREAMING TO WEBSERVER]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=2000, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished generating quiz.")
 
 
 def generate_topics(llm):
     """Summarizes the uploaded documents into a list of key topics."""
-    context = _get_context()
+    context = _get_context(limit=10, max_chars=3000)
         
     if not context.strip():
         yield {"choices": [{"text": "[]"}]}
         return
         
-    prompt = f"""[INST] You are an expert analyst. Read the DOCUMENT CONTENT below and extract the 5 to 10 most important key topics or themes. 
-CRITICAL INSTRUCTIONS:
-- You must ONLY return a valid JSON array of strings.
-- DO NOT add any conversational text or markdown formatting outside the JSON array.
-- DO NOT use prior knowledge.
+    prompt = f"""[INST] You are an expert analyst. Read the DOCUMENT CONTENT below and extract the 5 to 10 most important key topics or themes.
+Return ONLY a valid JSON array of strings. No other text or markdown.
 
-Example format:
-["Topic 1", "Topic 2", "Topic 3"]
+Example: ["Topic 1", "Topic 2", "Topic 3"]
 
 <DOCUMENT_CONTENT>
 {context}
 </DOCUMENT_CONTENT>
 [/INST]"""
-    yield from llm.create_completion(prompt, max_tokens=500, stop=["</s>", "[INST]"], stream=True)
+    print(f"\n📢 [AI GENERATING TOPICS STREAMING TO WEBSERVER]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=300, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished generating topics.")
+
+def generate_notes(llm, topic: str):
+    """Generates a detailed markdown study guide for a specific topic."""
+    context = _get_context(topic)
+        
+    if not context.strip():
+        yield {"choices": [{"text": "No documents found in the database covering this topic."}]}
+        return
+        
+    prompt = f"""[INST] You are an expert tutor. Based on the DOCUMENT CONTENT below, generate comprehensive study notes exclusively about the topic: '{topic}'.
+Format the notes nicely using markdown (headers, bullet points, bold text).
+CRITICAL INSTRUCTIONS:
+- You must ONLY use the provided DOCUMENT CONTENT.
+- Do NOT make up external information.
+- Provide a summary overview, followed by key points and details.
+
+<DOCUMENT_CONTENT>
+{context}
+</DOCUMENT_CONTENT>
+[/INST]"""
+    print(f"\n📢 [AI GENERATING NOTES STREAMING TO WEBSERVER]: ", end="")
+    for chunk in llm.create_completion(prompt, max_tokens=1500, stop=["</s>", "[INST]"], stream=True):
+        text = chunk["choices"][0].get("text", "")
+        if text:
+            print(text, end="", flush=True)
+        yield chunk
+    print("\n--------------------------------------------------")
+    print("✅ [LLM] Finished generating notes.")
 

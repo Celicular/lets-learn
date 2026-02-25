@@ -2,6 +2,7 @@ import React, { Suspense, lazy } from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 
 const Dashboard = lazy(() => import('./pages/Dashboard'));
+const FullDemo = lazy(() => import('./pages/FullDemo'));
 
 // A simple loading fallback
 const LoadingFallback = () => (
@@ -23,6 +24,9 @@ function App() {
           
           {/* Dashboard Route */}
           <Route path="/dashboard" element={<Dashboard />} />
+          
+          {/* Full Demo Route */}
+          <Route path="/fulldemo" element={<FullDemo />} />
           
           {/* Catch all route - redirect to dashboard */}
           <Route path="*" element={<Navigate to="/dashboard" replace />} />
