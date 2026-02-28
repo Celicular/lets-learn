@@ -12,6 +12,43 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
     ? Math.round(results.reduce((acc, r) => acc + (r.percentage || 0), 0) / totalQuizzes)
     : 0;
     
+  const [masteryData, setMasteryData] = React.useState({});
+  const [loadingMastery, setLoadingMastery] = React.useState(false);
+
+  const API = 'http://localhost:8000';
+
+  React.useEffect(() => {
+    if (activeProj) {
+      fetchMastery();
+    }
+  }, [activeProj]);
+
+  const fetchMastery = async () => {
+    try {
+      setLoadingMastery(true);
+      const res = await fetch(`${API}/projects/${activeProj}/mastery`);
+      if (res.ok) {
+        const data = await res.json();
+        setMasteryData(data.mastery || {});
+      }
+    } catch (err) {
+      console.error("Failed to fetch mastery", err);
+    } finally {
+      setLoadingMastery(false);
+    }
+  };
+
+  const weakTopics = Object.entries(masteryData)
+    .filter(([_, data]) => {
+      const acc = data.attempted > 0 ? (data.correct / data.attempted) * 100 : 100;
+      return acc < 60;
+    })
+    .map(([topic, data]) => ({
+      name: topic,
+      accuracy: Math.round((data.correct / data.attempted) * 100),
+      count: data.attempted
+    }));
+    
   let knowledgeLevel = "Rookie Explorer";
   let badgeColor = "bg-indigo-300";
   let levelIcon = <Rocket className="w-5 h-5 text-slate-900 stroke-[2.5px]" />;
@@ -138,14 +175,13 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
         </div>
 
         {/* Action Terminals */}
-        <div className="space-y-6 pb-12">
-            <h3 className="text-2xl font-black tracking-tight flex items-center gap-3">
-               <Sparkles className="w-6 h-6 text-indigo-400" /> Terminals
+        <div className="space-y-6">
+            <h3 className="text-2xl font-black tracking-tight flex items-center gap-3 text-slate-900 uppercase">
+               <Sparkles className="w-6 h-6 text-indigo-500" /> Operational Terminals
             </h3>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                
                 {/* Action Card: Call Mode */}
-                <motion.button variants={cardVariants} onClick={() => onNavigate('call')} className="col-span-1 min-h-[160px] border-4 border-slate-900 bg-indigo-400 p-6 text-left relative shadow-[6px_6px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all group overflow-hidden">
+                <motion.button variants={cardVariants} onClick={() => onNavigate('chat')} className="col-span-1 min-h-[160px] border-4 border-slate-900 bg-indigo-400 p-6 text-left relative shadow-[6px_6px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all group overflow-hidden">
                     <div className="absolute top-0 right-0 p-2 opacity-10 group-hover:opacity-40 transition-all duration-500 transform group-hover:rotate-12">
                         <PhoneCall className="w-32 h-32 text-slate-900 stroke-[3px]" />
                     </div>
@@ -155,7 +191,7 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
                         </div>
                         <div>
                             <h4 className="text-xl font-black text-slate-900 mb-1 uppercase tracking-tight">Holo-Call AI</h4>
-                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-xs">Talk hands-free</p>
+                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-[10px]">Voice Interface</p>
                         </div>
                     </div>
                 </motion.button>
@@ -171,7 +207,7 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
                         </div>
                         <div>
                             <h4 className="text-xl font-black text-slate-900 mb-1 uppercase tracking-tight">Comm Link</h4>
-                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-xs">Text chat with AI</p>
+                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-[10px]">Contextual Tutoring</p>
                         </div>
                     </div>
                 </motion.button>
@@ -187,7 +223,7 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
                         </div>
                         <div>
                             <h4 className="text-xl font-black text-slate-900 mb-1 uppercase tracking-tight">Simulation</h4>
-                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-xs">Test your skills</p>
+                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-[10px]">Competency Testing</p>
                         </div>
                     </div>
                 </motion.button>
@@ -203,13 +239,46 @@ export default function DashboardView({ activeProj, projects, results, onNavigat
                         </div>
                         <div>
                             <h4 className="text-xl font-black text-slate-900 mb-1 uppercase tracking-tight">Memory Core</h4>
-                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-xs">Review knowledge</p>
+                            <p className="text-slate-900 font-bold border-t-2 border-slate-900 pt-1 uppercase tracking-widest text-[10px]">Rapid Iteration</p>
                         </div>
                     </div>
                 </motion.button>
-
             </div>
         </div>
+
+        {/* Neural Weak Points Section */}
+        {weakTopics.length > 0 && (
+          <div className="space-y-6 pb-12">
+             <h3 className="text-2xl font-black tracking-tight flex items-center gap-3 text-slate-900 uppercase">
+               <Zap className="w-6 h-6 text-yellow-500" /> Neural Weak Points
+             </h3>
+             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {weakTopics.map((topic, i) => (
+                  <motion.div 
+                    key={topic.name}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.1 }}
+                    className="flex items-center justify-between p-4 bg-white border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a]"
+                  >
+                    <div className="flex-1 min-w-0 pr-4">
+                       <h4 className="font-black text-slate-900 uppercase truncate text-sm">{topic.name}</h4>
+                       <div className="flex items-center gap-2 mt-1">
+                          <span className="text-[10px] font-black px-2 py-0.5 bg-red-400 border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] uppercase">{topic.accuracy}% Accuracy</span>
+                          <span className="text-[10px] font-black text-slate-500 uppercase">{topic.count} Attempts</span>
+                       </div>
+                    </div>
+                    <button 
+                      onClick={() => onNavigate('quiz', topic.name)}
+                      className="px-4 py-2 bg-yellow-300 border-2 border-slate-900 font-black text-[10px] uppercase shadow-[2px_2px_0px_#0f172a] hover:translate-x-[1px] hover:translate-y-[1px] hover:shadow-none transition-all flex items-center gap-2"
+                    >
+                      Target Quiz <ArrowRight className="w-3 h-3 stroke-[3px]" />
+                    </button>
+                  </motion.div>
+                ))}
+             </div>
+          </div>
+        )}
 
       </motion.div>
     </div>

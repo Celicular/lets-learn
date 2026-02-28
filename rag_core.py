@@ -180,20 +180,39 @@ def generate_mermaid(llm, query: str, context: str = "") -> str:
     prompt = f"""[INST]
 You output ONLY Mermaid flowchart syntax.
 
-HARD RULES (never break):
-1. Start with: flowchart TD
-2. Use single-letter or short alphanumeric node IDs ONLY (A, B, C, D, N1).
-3. Define each node EXACTLY once using: A[Label]
-4. After defining nodes, ALL edges MUST use node IDs only (A --> B). NEVER use labels as IDs.
-5. One edge per line. No chaining.
-6. Edge labels must be 1–2 words ONLY. No commas, no punctuation.
-7. Allowed syntax ONLY:
-   A --> B
-   A -->|Label| B
-8. Forbidden syntax:
-   <--> , -- label --> , --<-- , multiple arrows in one line
-9. Node labels must be short words (no commas, no parentheses, no quotes).
-10. Output raw Mermaid only. No text.
+STRICT RULES (never break):
+
+STRUCTURE
+1. Start with EXACT text: flowchart TD
+2. First declare ALL nodes.
+3. After node declarations, declare ALL edges.
+4. Never mix node declarations and edges.
+
+NODE RULES
+5. Use short IDs only: A, B, C, D, N1, N2
+6. Declare each node EXACTLY once using: A[Label]
+7. Node labels = 1–3 simple words only
+8. Node labels must NOT contain commas, punctuation, parentheses, or quotes
+9. NEVER create nodes inside edges (FORBIDDEN: A --> B[Label])
+
+EDGE RULES
+10. Edges must use ONLY node IDs: A --> B
+11. One edge per line ONLY
+12. Allowed edge formats ONLY:
+    A --> B
+    A -->|Label| B
+13. Edge labels = 1–2 simple words ONLY
+14. Edge labels must NOT contain commas, punctuation, or symbols
+15. NO chained edges (FORBIDDEN: A --> B --> C)
+
+FORBIDDEN SYNTAX
+16. <--> , -- label --> , --x--> , -.-> , ==>
+17. Multiple arrows in one line
+18. Self loops unless essential
+
+OUTPUT RULE
+19. Output raw Mermaid only
+20. No explanations, no markdown, no extra text
 
 Student query: {query}
 Context: {context}
@@ -354,7 +373,15 @@ def generate_answer(llm, query, k=2, max_chars=1500, is_visual=False):
     question_text = query
     if is_visual:
         question_text = f"Explain the core concepts of this topic: '{query}'. Provide a highly structural explanation. CRITICAL: DO NOT mention that you cannot draw diagrams or images. NEVER apologize. Just explain the concepts directly and factually without any prelude."
-    prompt = f"""[INST] You are an expert AI tutor. You have been provided with document context below to help answer the user's question.
+    prompt = f"""[INST] You are a friendly AI tutor and a supportive friend. 
+
+PERSONALITY:
+- Talk to the student like a close friend—be warm, encouraging, and empathetic.
+- Answer personal questions (e.g., about your "day" or the student's feelings) in a supportive, friendly way.
+
+STRICT STUDY FOCUS:
+- If the user asks for jokes, games, or any non-study distractions, you MUST reply ONLY with: "cant joke.. its study time you cant loose focus..".
+- CRITICAL: After giving this refusal, DO NOT add anything else. DO NOT ask a random question. Just stop.
 
 CRITICAL RULES:
 1. NEVER apologize or state "I am an AI...".

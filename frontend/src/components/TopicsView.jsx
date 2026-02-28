@@ -28,32 +28,35 @@ export default function TopicsView({ activeProj, onSelectTopic, setIsBusy }) {
   const [isGeneratingNotes, setIsGeneratingNotes] = useState(false);
   const [abortController, setAbortController] = useState(null);
 
-  const extractTopics = async () => {
+  const extractTopics = async (checkCached = false) => {
     if (!activeProj) return;
     setIsLoading(true);
     setError(null);
-    setTopics([]);
+    if (!checkCached) setTopics([]);
     
     const controller = new AbortController();
     setAbortController(controller);
     if (setIsBusy) setIsBusy(true);
 
     try {
-      const res = await fetch(`http://localhost:8000/projects/${activeProj}/topics`, { signal: controller.signal });
+      const url = new URL(`http://localhost:8000/projects/${activeProj}/topics`);
+      if (checkCached) url.searchParams.append('check_cached', 'true');
+
+      const res = await fetch(url, { signal: controller.signal });
       if (!res.ok) throw new Error('Failed to fetch topics');
       
       const reader = res.body.getReader();
       const decoder = new TextDecoder('utf-8');
       let raw = '';
       
-      setStreamContent('');
+      if (!checkCached) setStreamContent('');
       
       while (true) {
         const { value, done } = await reader.read();
         if (done) break;
         const chunk = decoder.decode(value, { stream: true });
         raw += chunk;
-        setStreamContent(raw);
+        if (!checkCached) setStreamContent(raw);
       }
       
       const arrayMatch = raw.match(/\[[\s\S]*\]/);
@@ -62,10 +65,12 @@ export default function TopicsView({ activeProj, onSelectTopic, setIsBusy }) {
       setTopics(Array.isArray(parsed) ? parsed : []);
     } catch (err) {
       if (err.name === 'AbortError') {
-        setError('Topic extraction cancelled.');
+        if (!checkCached) setError('Topic extraction cancelled.');
       } else {
-        setError('Failed to extract topics. Make sure documents are uploaded and the server is running.');
-        console.error(err);
+        if (!checkCached) {
+          setError('Failed to extract topics. Make sure documents are uploaded and the server is running.');
+          console.error(err);
+        }
       }
     } finally {
       setIsLoading(false);
@@ -73,6 +78,10 @@ export default function TopicsView({ activeProj, onSelectTopic, setIsBusy }) {
       if (setIsBusy) setIsBusy(false);
     }
   };
+
+  React.useEffect(() => {
+    extractTopics(true);
+  }, [activeProj]);
 
   const handleSelect = (topic) => {
     setSelected(topic);
@@ -140,7 +149,7 @@ export default function TopicsView({ activeProj, onSelectTopic, setIsBusy }) {
           <p className="text-slate-900 font-bold bg-white border-2 border-slate-900 px-3 py-1 shadow-[4px_4px_0px_#0f172a] mt-2 inline-block">Extract major concepts from your uploaded documents.</p>
         </div>
         <button
-          onClick={extractTopics}
+          onClick={() => extractTopics()}
           disabled={isLoading || !activeProj}
           className="flex items-center gap-2 px-6 py-3 bg-yellow-300 text-slate-900 font-black border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] disabled:opacity-50 disabled:pointer-events-none uppercase tracking-widest"
         >

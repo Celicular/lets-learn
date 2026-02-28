@@ -6,38 +6,43 @@ function FlipCard({ question, answer }) {
   const [flipped, setFlipped] = useState(false);
 
   return (
-    <div
-      className="relative w-full h-52 cursor-pointer"
-      style={{ perspective: '1000px' }}
+    <motion.div
+      layout
+      className="relative w-full cursor-pointer group"
+      style={{ perspective: '1200px' }}
       onClick={() => setFlipped(f => !f)}
     >
       <motion.div
         animate={{ rotateY: flipped ? 180 : 0 }}
-        transition={{ duration: 0.5, ease: [0.23, 1, 0.32, 1] }}
+        transition={{ duration: 0.6, type: 'spring', stiffness: 260, damping: 20 }}
         style={{ transformStyle: 'preserve-3d' }}
-        className="w-full h-full relative"
+        className="w-full relative grid grid-cols-1 grid-rows-1"
       >
         {/* Front */}
         <div
-          className="absolute inset-0 bg-white border-4 border-slate-900 p-6 flex flex-col justify-between shadow-[8px_8px_0px_#0f172a]"
-          style={{ backfaceVisibility: 'hidden' }}
+          className="col-start-1 row-start-1 bg-white border-4 border-slate-900 p-6 flex flex-col shadow-[8px_8px_0px_#0f172a] min-h-[200px]"
+          style={{ backfaceVisibility: 'hidden', WebkitBackfaceVisibility: 'hidden', transform: 'rotateY(0deg)' }}
         >
-          <div className="text-xs font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 pb-2 w-fit">Question</div>
-          <p className="text-slate-900 font-black text-lg leading-snug flex-1 flex items-center mt-3">{question}</p>
-          <div className="text-xs text-slate-900 font-bold mt-2 uppercase tracking-tight">Tap to reveal answer →</div>
+          <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 pb-1 mb-4 w-fit">Question</div>
+          <p className="text-slate-900 font-bold text-lg leading-snug flex-1">{question}</p>
+          <div className="text-[10px] text-slate-400 font-black mt-4 uppercase tracking-widest text-right">Click to flip</div>
         </div>
 
         {/* Back */}
         <div
-          className="absolute inset-0 bg-indigo-400 border-4 border-slate-900 p-6 flex flex-col justify-between shadow-[8px_8px_0px_#0f172a]"
-          style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+          className="col-start-1 row-start-1 bg-indigo-400 border-4 border-slate-900 p-6 flex flex-col shadow-[8px_8px_0px_#0f172a] min-h-[200px]"
+          style={{ 
+            backfaceVisibility: 'hidden', 
+            WebkitBackfaceVisibility: 'hidden',
+            transform: 'rotateY(180deg)' 
+          }}
         >
-          <div className="text-xs font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 pb-2 w-fit">Answer</div>
-          <p className="text-slate-900 font-black text-lg leading-snug flex-1 flex items-center mt-3">{answer}</p>
-          <div className="text-xs text-slate-900 font-bold mt-2 uppercase tracking-tight">← Tap to flip back</div>
+          <div className="text-[10px] font-black text-slate-900 uppercase tracking-widest border-b-2 border-slate-900 pb-1 mb-4 w-fit text-slate-900">Answer</div>
+          <p className="text-white font-bold text-lg leading-snug flex-1">{answer}</p>
+          <div className="text-[10px] text-indigo-200 font-black mt-4 uppercase tracking-widest text-right">Click to return</div>
         </div>
       </motion.div>
-    </div>
+    </motion.div>
   );
 }
 
@@ -68,7 +73,7 @@ export default function FlashcardsView({ activeProj, setIsBusy }) {
 
   useEffect(() => {
     if (activeProj) {
-      fetch(`http://localhost:8000/projects/${activeProj}/topics`)
+      fetch(`http://localhost:8000/projects/${activeProj}/topics?check_cached=true`)
         .then(res => res.json())
         .then(data => {
           if (Array.isArray(data)) setAvailableTopics(data);

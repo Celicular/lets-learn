@@ -105,6 +105,36 @@
     font-family: 'Inter', system-ui, sans-serif;
     overflow: hidden;
   }
+
+  /* Custom Neobrutalist Scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #5B5FEF #f1f5f9;
+  }
+
+  ::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+  }
+
+  ::-webkit-scrollbar-track {
+    background: #f1f5f9;
+    border-left: 2px solid #0f172a;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: #5B5FEF;
+    border: 2px solid #0f172a;
+    box-shadow: 2px 2px 0px #0f172a;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: #4338ca;
+  }
+
+  ::-webkit-scrollbar-corner {
+    background: #f1f5f9;
+  }
 }
 
 @layer utilities {
@@ -210,4 +240,97 @@
   0% { transform: translateY(0px) }
   50% { transform: translateY(-15px) }
   100% { transform: translateY(0px) }
+}
+
+/* HARDCORE FOCUS DARK MODE OVERRIDES */
+.focus-mode-active {
+  color: white !important;
+}
+
+.focus-mode-active .bg-white,
+.focus-mode-active .bg-slate-50,
+.focus-mode-active .bg-slate-100,
+.focus-mode-active .bg-\[\#e6ebf5\],
+.focus-mode-active .bg-\[\#f7f8fb\] {
+  background-color: #0f172a !important;
+  color: #f1f5f9 !important;
+}
+
+.focus-mode-active .text-slate-900,
+.focus-mode-active .text-slate-800,
+.focus-mode-active .text-slate-600,
+.focus-mode-active .text-slate-500 {
+  color: #f1f5f9 !important;
+}
+
+.focus-mode-active .border-slate-900,
+.focus-mode-active .border-slate-300 {
+  border-color: #334155 !important;
+}
+
+/* Force all utility-based shadows to disappear or shift */
+.focus-mode-active [class*="shadow-["] {
+  box-shadow: none !important;
+  border-color: #5B5FEF !important;
+  border-width: 2px !important;
+}
+
+/* Dashboard Action Cards Overrides */
+.focus-mode-active .bg-indigo-400,
+.focus-mode-active .bg-emerald-300,
+.focus-mode-active .bg-pink-400,
+.focus-mode-active .bg-amber-300,
+.focus-mode-active .bg-yellow-300,
+.focus-mode-active .bg-yellow-300,
+.focus-mode-active .bg-lime-400,
+.focus-mode-active .bg-lime-300,
+.focus-mode-active .bg-cyan-300,
+.focus-mode-active .bg-fuchsia-300,
+.focus-mode-active .bg-emerald-300 {
+  background-color: #1e293b !important;
+  color: #A3E635 !important;
+  border-color: #5B5FEF !important;
+}
+
+/* User Sent Messages: keep dark text on lime background for readability */
+.focus-mode-active .bg-lime-300.text-slate-900,
+.focus-mode-active .bg-lime-400.text-slate-900 {
+  background-color: #A3E635 !important;
+  color: #0f172a !important;
+}
+
+.focus-mode-active .bg-white.border-2,
+.focus-mode-active .bg-white.border-4 {
+  background-color: #1e293b !important;
+}
+
+.focus-mode-active nav button.bg-indigo-300 {
+  background-color: #5B5FEF !important;
+  color: white !important;
+}
+
+.focus-mode-active .bg-emerald-200 {
+  background-color: #0f172a !important;
+}
+
+.focus-mode-active input,
+.focus-mode-active select {
+  background-color: #0f172a !important;
+  color: white !important;
+  border-color: #334155 !important;
+}
+
+.focus-mode-active .prose {
+  color: #f1f5f9 !important;
+}
+
+.focus-mode-active .prose h1,
+.focus-mode-active .prose h2,
+.focus-mode-active .prose h3 {
+  color: #A3E635 !important;
+}
+
+.focus-mode-active .prose code {
+  background-color: #0f172a !important;
+  color: #A3E635 !important;
 }

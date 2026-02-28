@@ -17,7 +17,8 @@
                 "summary": " # HS Web Solutions Proposal for Al Gharbia Enterprises\n\nHS Web Solutions proposes a modern corporate website for Al Gharbia Enterprises, including the retrieval and configuration of the domain `algharbiaco.com`. The project includes a mid-level, frontend-focused website, showcasing the company's divisions, services, and major projects.\n\n## Project Overview\nHS Web Solutions will develop a professional website for Al Gharbia Enterprises, focusing on the group's legacy, capabilities, ISO-certified quality standards, and large-scale operations in construction and engineering.\n\n## Project Scope & Deliverables\n\n1. **Website Sections:** The website will include pages for corporate identity, business divisions & services, and a project portfolio.\n2. **Additional Features:** Features include downloads, a responsive modern design, SEO, and email integration.\n\n## Technology Stack\nThe technology stack includes HTML5, CSS3, Tailwind/Bootstrap, JavaScript for the frontend, PHP for the backend, and PHPMailer/SMTP for email services. Hosting will be provided for two years.\n\n## Timeline\nThe project is estimated to take between 5-7 days (max: 10 days). The development process includes structure planning, UI/UX layout, frontend development & coding, integrations (forms) & SEO setup, and final QA testing & deployment.\n\n## Cost Breakdown\nThe project cost includes website development tools, hosting for two years, development fee, and a total project cost in INR \u20b945,000 or OMR 192.40.\n\n## Payment Terms\nThe payment terms include a 30% advance payment, 40% at the beginning of development, and 30% upon completion.\n\nHS Web Solutions commits to providing absolute reliability and 24/7 technical assistance throughout the partnership with Al Gharbia Enterprises.",
                 "images": {}
             },
-            "results": []
+            "results": [],
+            "mastery": {}
         },
         "test": {
             "loaded_files": [
@@ -54,7 +55,8 @@
                     "timestamp": "2026-02-25T22:31:44.999Z",
                     "project": "test"
                 }
-            ]
+            ],
+            "mastery": {}
         },
         "business": {
             "loaded_files": [
@@ -68,7 +70,8 @@
                 "summary": null,
                 "images": {}
             },
-            "results": []
+            "results": [],
+            "mastery": {}
         },
         "celi": {
             "loaded_files": [
@@ -84,25 +87,243 @@
                 "summary": null,
                 "images": {}
             },
-            "results": []
+            "results": [],
+            "mastery": {}
         },
         "dwdm": {
             "loaded_files": [
-                "data\\dwdm\\Syllabus-Data Sciences Data Warehousing & Data Mining.pdf"
+                "data\\dwdm\\Syllabus-Data Sciences Data Warehousing & Data Mining.pdf",
+                "data\\dwdm\\dwdm question bank.pdf"
             ],
             "cache": {
-                "topics": " [\"Data Warehousing and Data Mining\", \"Data Warehousing & Data Mining Techniques\", \"Data Mining Functionalities\", \"Data Mining Systems\", \"Data Preprocessing\", \"Data Reduction\", \"Data Transformation and Data Discretization\", \"Data Warehouse Modeling\", \"Data Cube and OLAP\", \"Data Warehouse Design and Usage\", \"Data Warehouse Implementation\", \"Mining Frequent Patterns and Associations\", \"Frequent Itemset Mining Methods\", \"Pattern Evaluation Methods\", \"Basic Concepts of Classification\", \"Decision Tree Induction\", \"Bayesian Classification Methods\"]",
+                "topics": " [\"Data Warehousing\", \"Data Mining\", \"Data Warehousing & Data Mining Techniques\", \"Data Preprocessing\", \"Data Warehouse\", \"OLAP\", \"Data Cube\", \"Data Warehouse Modeling\", \"Data Warehouse Implementation\", \"Data Reduction\", \"Data Transformation\", \"Data Discretization\", \"Data Cleaning\", \"Data Integration\", \"Frequent Patterns\", \"Association Rules\", \"Pattern Evaluation Methods\", \"Decision Tree Induction\", \"Bayesian Classification Methods\"]",
                 "quizzes": {
-                    "data mining systems": " [\n  {\n    \"question\": \"Which data mining system is used for discovering associations among large datasets?\",\n    \"options\": [\n      \"Decision Tree System\",\n      \"Association Rule Mining System\",\n      \"Neural Network System\",\n      \"Clustering System\"\n    ],\n    \"answer\": \"Association Rule Mining System\"\n  },\n  {\n    \"question\": \"Which of the following data mining techniques is used to identify hidden patterns or anomalies in large datasets?\",\n    \"options\": [\n      \"Classification\",\n      \"Association Rule Mining\",\n      \"Clustering\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Anomaly Detection\"\n  },\n  {\n    \"question\": \"Which data mining technique is used for solving regression problems where the relationship between the dependent and independent variables is non-linear?\",\n    \"options\": [\n      \"Decision Trees\",\n      \"Association Rule Mining\",\n      \"Neural Networks\",\n      \"Support Vector Machines\"\n    ],\n    \"answer\": \"Neural Networks\"\n  },\n  {\n    \"question\": \"Which data mining technique is used for finding patterns or groups in large datasets where the data points are not labeled?\",\n    \"options\": [\n      \"Classification\",\n      \"Association Rule Mining\",\n      \"Clustering\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Clustering\"\n  },\n  {\n    \"question\": \"Which data mining system is used to identify unusual records or events based on known normal behavior patterns?\",\n    \"options\": [\n      \"Classification System\",\n      \"Association Rule Mining System\",\n      \"Anomaly Detection System\",\n      \"Clustering System\"\n    ],\n    \"answer\": \"Anomaly Detection System\"\n  }\n]"
+                    "data mining functionalities": " Based on the topic 'Data Mining Functionalities', here are five multiple-choice questions:\n\n[\n  {\n    \"question\": \"Which of the following is NOT a primary data mining functionality?\",\n    \"options\": [\n      \"Classification\",\n      \"Association Rule Mining\",\n      \"Clustering\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Anomaly Detection\"\n  },\n  {\n    \"question\": \"Which data mining functionality is used to identify frequently occurring itemsets or association rules in large databases?\",\n    \"options\": [\n      \"Classification\",\n      \"Clustering\",\n      \"Association Rule Mining\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Association Rule Mining\"\n  },\n  {\n    \"question\": \"Which data mining functionality is used to identify patterns or relationships in data that deviate significantly from the expected or normal behavior?\",\n    \"options\": [\n      \"Classification\",\n      \"Clustering\",\n      \"Anomaly Detection\",\n      \"Association Rule Mining\"\n    ],\n    \"answer\": \"Anomaly Detection\"\n  },\n  {\n    \"question\": \"Which data mining functionality is used to group similar data points or objects into clusters based on their inherent properties?\",\n    \"options\": [\n      \"Classification\",\n      \"Clustering\",\n      \"Association Rule Mining\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Clustering\"\n  },\n  {\n    \"question\": \"Which data mining functionality is used to predict or estimate the class or value of new data based on previous data?\",\n    \"options\": [\n      \"Classification\",\n      \"Clustering\",\n      \"Association Rule Mining\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Classification\"\n  }\n]",
+                    "decision tree induction": " Based on my expert knowledge on Decision Tree Induction, here are five questions:\n\n[\n  {\n    \"question\": \"Which algorithm is used in Decision Tree Induction for selecting the best split at each node?\",\n    \"options\": [\n      \"ID3 Algorithm\",\n      \"C4.5 Algorithm\",\n      \"CART Algorithm\",\n      \"OneR Algorithm\"\n    ],\n    \"answer\": \"ID3 Algorithm and C4.5 Algorithm use this criterion, while CART Algorithm uses a different method for selection.\"\n  },\n  {\n    \"question\": \"What is the main objective in splitting a node in Decision Tree Induction?\",\n    \"options\": [\n      \"To increase the tree depth\",\n      \"To decrease the tree depth\",\n      \"To minimize the impurity of the data at the node\",\n      \"To maximize the impurity of the data at the node\"\n    ],\n    \"answer\": \"To minimize the impurity of the data at the node\"\n  },\n  {\n    \"question\": \"Which measure is used in ID3 and C4.5 algorithms to calculate node impurity?\",\n    \"options\": [\n      \"Gain Ratio\",\n      \"Entropy\",\n      \"Information Gain\",\n      \"Mutual Information\"\n    ],\n    \"answer\": \"Information Gain\"\n  },\n  {\n    \"question\": \"Which method is used in CART (Classification and Regression Trees) to determine the best split?\",\n    \"options\": [\n      \"Gain Ratio Method\",\n      \"Information Gain Method\",\n      \"Entropy Method\",\n      \"Variance Reduction Method\"\n    ],\n    \"answer\": \"Variance Reduction Method\"\n  },\n  {\n    \"question\": \"In what scenario is Decision Tree Induction less suitable?\",\n    \"options\": [\n      \"Small datasets\",\n      \"Large datasets\",\n      \"Nominal datasets\",\n      \"Continuous datasets\"\n    ],\n    \"answer\": \"Decision Tree Induction is less suitable for small datasets as it requires sufficient data to form meaningful trees.\"\n  }\n]",
+                    "data mining systems": " Based on my expert knowledge in Data Mining Systems, here are five relevant and educational multiple-choice questions:\n\n[\n  {\n    \"question\": \"Which data mining technique is used to discover patterns in large datasets based on frequency and association rule mining?\",\n    \"options\": [\n      \"Decision Tree\",\n      \"Association Rule Mining\",\n      \"Clustering\",\n      \"Neural Network\"\n    ],\n    \"answer\": \"Association Rule Mining\"\n  },\n  {\n    \"question\": \"Which database management system (DBMS) is commonly used for data mining due to its ability to handle large volumes of data and high concurrent access?\",\n    \"options\": [\n      \"MySQL\",\n      \"Oracle Database\",\n      \"MongoDB\",\n      \"Microsoft Access\"\n    ],\n    \"answer\": \"Oracle Database\"\n  },\n  {\n    \"question\": \"Which data mining task involves the identification of groups or clusters of similar data points?\",\n    \"options\": [\n      \"Classification\",\n      \"Association Rule Mining\",\n      \"Clustering\",\n      \"Anomaly Detection\"\n    ],\n    \"answer\": \"Clustering\"\n  },\n  {\n    \"question\": \"Which data preprocessing technique is used to handle missing values in the dataset?\",\n    \"options\": [\n      \"Normalization\",\n      \"Feature Selection\",\n      \"Imputation\",\n      \"Data Transformation\"\n    ],\n    \"answer\": \"Imputation\"\n  },\n  {\n    \"question\": \"Which data mining technique is used to identify and analyze unusual data patterns that do not conform to normal behavior?\",\n    \"options\": [\n      \"Clustering\",\n      \"Classification\",\n      \"Anomaly Detection\",\n      \"Association Rule Mining\"\n    ],\n    \"answer\": \"Anomaly Detection\"\n  }\n]",
+                    "data preprocessing": [
+                        {
+                            "question": "Which of the following is a major task in Data Preprocessing?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Reduction",
+                                "Data Discretization",
+                                "Data Generalization"
+                            ],
+                            "answer": "Data Reduction"
+                        },
+                        {
+                            "question": "Which technique is used in Data Preprocessing to transform data from one format to another?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Reduction",
+                                "Data Discretization",
+                                "Data Cleaning"
+                            ],
+                            "answer": "Data Transformation"
+                        },
+                        {
+                            "question": "Which method is used in Data Preprocessing to identify and handle errors and inconsistencies in the data?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Reduction",
+                                "Data Discretization",
+                                "Data Cleaning"
+                            ],
+                            "answer": "Data Cleaning"
+                        },
+                        {
+                            "question": "Which technique is used in Data Preprocessing to convert continuous data into discrete form?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Reduction",
+                                "Data Discretization",
+                                "Data Cleaning"
+                            ],
+                            "answer": "Data Discretization"
+                        },
+                        {
+                            "question": "Which of the following is a major issue in Data Preprocessing?",
+                            "options": [
+                                "Data Quality",
+                                "Data Reduction",
+                                "Data Transformation",
+                                "Data Discretization"
+                            ],
+                            "answer": "Data Quality"
+                        }
+                    ],
+                    "bayesian classification methods": " [\n  {\n    \"question\": \"Which Bayesian Classification Method is used for spam detection in emails?\",\n    \"options\": [\n      \"Naive Bayes Classifier\",\n      \"Decision Tree Classifier\",\n      \"Support Vector Machines\",\n      \"Neural Networks\"\n    ],\n    \"answer\": \"Naive Bayes Classifier\"\n  },\n  {\n    \"question\": \"What is the main idea behind the use of Bayesian Classification Methods?\",\n    \"options\": [\n      \"To find patterns in data and create rules for classifying new data\",\n      \"To create a model that can predict the probability of an event\",\n      \"To create a decision tree based on given data\",\n      \"To cluster data points into distinct groups\"\n    ],\n    \"answer\": \"To create a model that can predict the probability of an event\"\n  },\n  {\n    \"question\": \"Which Bayesian Classification Method assumes that all features are conditionally independent given the class?\",\n    \"options\": [\n      \"Decision Trees\",\n      \"Support Vector Machines\",\n      \"Naive Bayes Classifier\",\n      \"Neural Networks\"\n    ],\n    \"answer\": \"Naive Bayes Classifier\"\n  },\n  {\n    \"question\": \"Which Bayesian Classification Method can handle high-dimensional data effectively?\",\n    \"options\": [\n      \"Naive Bayes Classifier\",\n      \"Decision Trees\",\n      \"Support Vector Machines\",\n      \"Neural Networks\"\n    ],\n    \"answer\": \"Support Vector Machines\"\n  },\n  {\n    \"question\": \"Which Bayesian Classification Method is commonly used for text classification tasks?\",\n    \"options\": [\n      \"Decision Trees\",\n      \"Support Vector Machines\",\n      \"Naive Bayes Classifier\",\n      \"Neural Networks\"\n    ],\n    \"answer\": \"Naive Bayes Classifier\"\n  }\n]",
+                    "all": [
+                        {
+                            "question": "What is the primary function of a Data Warehouse?",
+                            "options": [
+                                "Transaction processing",
+                                "Supporting querying and analysis of data",
+                                "Providing a single version of the truth",
+                                "Ensuring data is incomplete"
+                            ],
+                            "answer": "Supporting querying and analysis of data"
+                        },
+                        {
+                            "question": "What is Online Analytical Processing (OLAP) used for?",
+                            "options": [
+                                "Data transformation",
+                                "Multidimensional analysis on data cubes",
+                                "Creating logical and physical data models",
+                                "Loading data into a Data Warehouse"
+                            ],
+                            "answer": "Multidimensional analysis on data cubes"
+                        },
+                        {
+                            "question": "Which technique is used to divide the data into equal-sized intervals?",
+                            "options": [
+                                "Equal-frequency discretization",
+                                "Equal-width discretization",
+                                "Clustering-based discretization",
+                                "Data masking"
+                            ],
+                            "answer": "Equal-width discretization"
+                        },
+                        {
+                            "question": "What is the main objective of Data Warehouse modeling?",
+                            "options": [
+                                "Identifying the business objectives and data analysis requirements",
+                                "Choosing the right Data Warehouse technology and architecture",
+                                "Designing the Data Warehouse schema and data models",
+                                "Ensuring data is loaded into the Data Warehouse in a timely manner"
+                            ],
+                            "answer": "Designing the Data Warehouse schema and data models"
+                        },
+                        {
+                            "question": "Which method is used to group data points into clusters and define the boundaries of each cluster?",
+                            "options": [
+                                "Equal-frequency discretization",
+                                "Equal-width discretization",
+                                "Clustering-based discretization",
+                                "Data masking"
+                            ],
+                            "answer": "Clustering-based discretization"
+                        },
+                        {
+                            "question": "What is the primary goal of Data Transformation?",
+                            "options": [
+                                "Ensuring that data is incomplete and inconsistent",
+                                "Preparing data for analysis by converting it into a consistent and complete format",
+                                "Handling noise and outliers",
+                                "Protecting sensitive information by hiding it"
+                            ],
+                            "answer": "Preparing data for analysis by converting it into a consistent and complete format"
+                        },
+                        {
+                            "question": "What is the main difference between a Fact Table and a Dimension Table in a Star Schema?",
+                            "options": [
+                                "A Fact Table contains descriptive attributes, while a Dimension Table contains measures or facts",
+                                "A Fact Table contains measures or facts, while a Dimension Table contains keys linking to fact tables",
+                                "A Fact Table contains keys linking to dimension tables, while a Dimension Table contains measures or facts",
+                                "A Fact Table contains keys and foreign keys, while a Dimension Table contains only measures or facts"
+                            ],
+                            "answer": "A Fact Table contains measures or facts, while a Dimension Table contains keys linking to fact tables"
+                        },
+                        {
+                            "question": "What statistical measure indicates the degree of spread or dispersion of data?",
+                            "options": [
+                                "Mode",
+                                "Median",
+                                "Mean",
+                                "Standard deviation"
+                            ],
+                            "answer": "Standard deviation"
+                        },
+                        {
+                            "question": "What is the goal of Data Generalization by Attribute-Oriented Induction?",
+                            "options": [
+                                "Preserving the statistical properties of the original data while replacing detailed data with more generalized data",
+                                "Identifying and generalizing data using a set of rules based on the attributes of the data",
+                                "Protecting sensitive information by removing it completely from the data",
+                                "Ensuring that data is always in a consistent format"
+                            ],
+                            "answer": "Preserving the statistical properties of the original data while replacing detailed data with more generalized data"
+                        },
+                        {
+                            "question": "What is the primary goal of Data Warehouse implementation?",
+                            "options": [
+                                "Choosing the right Data Warehouse technology and architecture",
+                                "Designing the Data Warehouse schema and data models",
+                                "Loading data into the Data Warehouse, including data cleansing and transformation",
+                                "Providing training and support to users"
+                            ],
+                            "answer": "Loading data into the Data Warehouse, including data cleansing and transformation"
+                        }
+                    ],
+                    "data reduction": [
+                        {
+                            "question": "Which technique is used for reducing the number of random variables or dimensions in a data set while retaining most of the original information?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Cleaning",
+                                "Dimensionality Reduction (e.g., PCA)",
+                                "Data Integration"
+                            ],
+                            "answer": "Dimensionality Reduction (e.g., PCA)"
+                        },
+                        {
+                            "question": "Given a data set X with the values: [3, 7, 4, 12, 21, 25, 13, 17], how many bins would you divide it into for L-frequency binning with a bin size of 3?",
+                            "options": [
+                                "Two",
+                                "Three",
+                                "Four",
+                                "Five"
+                            ],
+                            "answer": "Three"
+                        },
+                        {
+                            "question": "Which technique is used for handling missing values in a data set?",
+                            "options": [
+                                "Data Transformation",
+                                "Data Cleaning",
+                                "Data Integration",
+                                "Dimensionality Reduction (e.g., Imputation)"
+                            ],
+                            "answer": "Dimensionality Reduction (e.g., Imputation)"
+                        },
+                        {
+                            "question": "Which of the following is a difference between OLTP and Data Warehouse?",
+                            "options": [
+                                "OLTP is a data warehouse, and Data Warehouse is a data mart.",
+                                "OLTP stores transactional data, and Data Warehouse stores aggregated data.",
+                                "OLTP is used for analytical queries, and Data Warehouse is used for transactional processing.",
+                                "OLTP and Data Warehouse are the same."
+                            ],
+                            "answer": "OLTP stores transactional data, and Data Warehouse stores aggregated data."
+                        },
+                        {
+                            "question": "Which theorem is used for classifying tuples using Na\u00efve Bayes?",
+                            "options": [
+                                "Bayes Theorem",
+                                "Fisher's Linear Discriminant",
+                                "Apriori Principle",
+                                "ID3 Decision Tree"
+                            ],
+                            "answer": "Bayes Theorem"
+                        }
+                    ]
                 },
                 "flashcards": {
                     "data preprocessing": " Q: What is the focus area in Data Mining related to preparing the data for analysis?\nA: Data Preprocessing\n\nQ: What are some major tasks in Data Preprocessing?\nA: Data Reduction, Data Transformation and Data Discretization, Data Cleaning and Data Integration\n\nQ: What is Data Reduction in the context of Data Preprocessing?\nA: A process used to reduce the size of the dataset while keeping the essential information.\n\nQ: What is Data Transformation in the context of Data Preprocessing?\nA: A process used to modify the data into a form that is more suitable for analysis.\n\nQ: What is Data Discretization in the context of Data Preprocessing?\nA: A process used to convert continuous data into discrete categories or intervals.\n\nQ: What is Data Cleaning in the context of Data Preprocessing?\nA: A process used to remove or correct errors, inconsistencies and inaccuracies in the data.\n\nQ: What is Data Integration in the context of Data Preprocessing?\nA: A process used to combine data from different sources into a single, unified dataset.\n\nQ: What is the goal of Data Preprocessing?\nA: To improve the quality and suitability of data for analysis and modeling.",
                     "all": " Q: What is Data Warehousing?\nA: A large, centralized repository of integrated data designed to enable informed decision-making through data analysis.\n\nQ: What is Online Analytical Processing (OLAP)?\nA: A type of query processing and multidimensional analysis performed on data stored in a Data Warehouse.\n\nQ: What are Data Cube's functions in Data Warehousing?\nA: A multidimensional representation of data where data is organized into dimensions and measures for querying and analysis.\n\nQ: What is the goal of Data Warehouse modeling?\nA: The design and implementation of a Data Warehouse to support an organization's data analysis requirements.\n\nQ: What is Attribute-Oriented Induction?\nA: A method for identifying and generalizing data using a set of rules based on the attributes of the data.\n\nQ: What is Data Cube computation?\nA: The efficient calculation and retrieval of data from a Data Cube, including aggregating, drilling down, pivoting, and calculating complex queries.\n\nQ: What are the primary concepts of a Data Warehouse?\nA: A system designed for querying and analysis, providing a single version of the truth, enabling data access from multiple sources, ensuring data accuracy, consistency, and completeness, and providing fast access through indexes and summarizations.\n\nQ: What is the role of Data Warehouse modeling in Data Mining?\nA: Identifying data sources, defining logical and physical data models, designing Data Cubes and OLAP technologies, and ensuring effective data analysis.",
-                    "data warehouse design and usage": " Q: What are the basic concepts of Data Warehouse?\nA: Data Warehouse refers to a large, centralized repository of data used for reporting and analysis. It is designed to support querying and analysis rather than transaction processing.\n\nQ: What is Data Cube in the context of Data Warehouse?\nA: A Data Cube is a multi-dimensional array of data, which is a fundamental component of Online Analytical Processing (OLAP) systems used in Data Warehouses. It allows for data to be analyzed in multiple dimensions and at various levels of granularity.\n\nQ: What is OLAP in Data Warehouse context?\nA: Online Analytical Processing (OLAP) is a set of technologies designed for the manipulation and analysis of data in a Data Warehouse using multi-dimensional analysis and aggregation techniques.\n\nQ: What is Data Mining in the context of Data Warehouse?\nA: Data Mining is the process of discovering patterns, associations, correlations, and anomalies in large datasets using machine learning, statistical, and visualization techniques.\n\nQ: What are the major issues in Data Mining?\nA: Major issues in Data Mining include selecting the appropriate data mining technique, dealing with large and complex datasets, ensuring data quality, and protecting data privacy.\n\nQ: What is Data Preprocessing in the context of Data Warehouse?\nA: Data Preprocessing is the initial stage of Data Mining, which involves cleaning, transforming, and reducing the data to make it suitable for the mining process.\n\nQ: What is Data Discretization in Data Preprocessing?\nA: Data Discretization is the process of transforming continuous data into discrete intervals or categories to simplify the data for analysis.\n\nQ: What is the purpose of Data Integration in Data Warehouse?\nA: Data Integration is the process of combining data from different sources into a single, cohesive dataset. It ensures that the Data Warehouse has a consistent and accurate representation of the data."
+                    "data warehouse design and usage": " Q: What are the basic concepts of Data Warehouse?\nA: Data Warehouse refers to a large, centralized repository of data used for reporting and analysis. It is designed to support querying and analysis rather than transaction processing.\n\nQ: What is Data Cube in the context of Data Warehouse?\nA: A Data Cube is a multi-dimensional array of data, which is a fundamental component of Online Analytical Processing (OLAP) systems used in Data Warehouses. It allows for data to be analyzed in multiple dimensions and at various levels of granularity.\n\nQ: What is OLAP in Data Warehouse context?\nA: Online Analytical Processing (OLAP) is a set of technologies designed for the manipulation and analysis of data in a Data Warehouse using multi-dimensional analysis and aggregation techniques.\n\nQ: What is Data Mining in the context of Data Warehouse?\nA: Data Mining is the process of discovering patterns, associations, correlations, and anomalies in large datasets using machine learning, statistical, and visualization techniques.\n\nQ: What are the major issues in Data Mining?\nA: Major issues in Data Mining include selecting the appropriate data mining technique, dealing with large and complex datasets, ensuring data quality, and protecting data privacy.\n\nQ: What is Data Preprocessing in the context of Data Warehouse?\nA: Data Preprocessing is the initial stage of Data Mining, which involves cleaning, transforming, and reducing the data to make it suitable for the mining process.\n\nQ: What is Data Discretization in Data Preprocessing?\nA: Data Discretization is the process of transforming continuous data into discrete intervals or categories to simplify the data for analysis.\n\nQ: What is the purpose of Data Integration in Data Warehouse?\nA: Data Integration is the process of combining data from different sources into a single, cohesive dataset. It ensures that the Data Warehouse has a consistent and accurate representation of the data.",
+                    "data reduction": " Q: What is l-frequency binning and how many bins are created in the given example?\nA: l-frequency binning is a data reduction technique where data is grouped into bins based on their frequency. In the given example, the data is divided into 3 bins.\n\nQ: What are the differences between data integration and data cleaning?\nA: Data integration is the process of combining data from multiple sources into a single, cohesive data store. Data cleaning is the process of identifying and correcting or removing errors, inconsistencies, and inaccuracies in the data.\n\nQ: Explain the steps involved in data transformation with an example.\nA: Data transformation involves converting data from one format to another or applying mathematical functions to the data. An example of data transformation is normalization, which involves transforming data to have a mean of 0 and a standard deviation of 1.\n\nQ: How can missing values impact mining results and how can they be handled?\nA: Missing values can impact mining results by affecting the accuracy and completeness of the data. They can be handled by imputation methods such as mean imputation, median imputation, or using advanced statistical techniques like multiple imputation.\n\nQ: Describe the architecture of a Data Warehouse.\nA: A Data Warehouse is a large, centralized repository of data that is used for reporting and analysis. It consists of a database management system, data marts (smaller subsets of data organized around specific business areas), ETL (Extract, Transform, Load) tools, and OLAP (Online Analytical Processing) tools.\n\nQ: What is the difference between OLTP and a data warehouse?\nA: OLTP (Online Transaction Processing) systems are used for managing current transactions and are optimized for fast inserts, updates, and deletes. A data warehouse is used for reporting and analysis and is optimized for querying and aggregating large amounts of data.\n\nQ: Explain how OLAP operations work on a data cube. Provide a scenario.\nA: OLAP (Online Analytical Processing) operations are used to analyze data in a multi-dimensional perspective. A scenario could be analyzing sales data by product, region, and time. Drill-down would allow you to explore further by selecting a specific product or region, slice-and-dice would allow you to compare different products or regions, and roll-up would allow you to see the data at a higher level of aggregation.\n\nQ: What is dimensionality reduction and how does PCA work?\nA: Dimensionality reduction is a technique used to reduce the number of features in a data set while preserving as much information as possible. PCA (Principal Component Analysis) is a technique used for dimensionality reduction that involves transforming the data into a new coordinate system where the first few dimensions capture the majority of the variance in the data. An example of PCA is transforming a 2-dimensional data set into a 1-dimensional data set while preserving most of the information.",
+                    "data warehouse modeling": " Q: What are the basic concepts of Data Warehouse Modeling?\nA: Data Warehouse Modeling is a process used in designing and building a Data Warehouse. It includes concepts such as Data Cube and OLAP (Online Analytical Process",
+                    "data cleaning": " Q: What is Data Cleaning in the context of data preprocessing?\nA: Data Cleaning is a process of identifying and correcting or removing errors, inconsistencies, and inaccuracies in the dataset to improve the quality of the data.\n\nQ: What is the difference between Data Cleaning and Data Integration?\nA: Data Cleaning is the process of cleaning and preparing the data for analysis, while Data Integration is the process of combining data from various sources into a single, unified view.\n\nQ: What is the impact of missing values in data on mining results?\nA: Missing values in data can affect the accuracy and completeness of the results obtained from data mining. They can be handled by methods such as mean imputation, mode imputation, or by using machine learning algorithms to predict missing values based on other data.\n\nQ: How does l-frequency binning contribute to data cleaning?\nA: l-frequency binning is a technique used in data preprocessing for data cleaning. It involves dividing the data into bins based on frequency, which helps to identify and handle outliers and inconsistencies in the data. For example, in the given document content, the data [3, 7, 4, 12, 21, 25, 13, 17] is divided into 3 bins for further analysis."
                 },
                 "notes": {
                     "data cube and olap": " # Data Warehouse and Online Analytical Processing (OLAP)\n\nData Warehouse is a large, centralized repository of integrated data that enables organizations to make informed decisions based on data analysis. Online Analytical Processing (OLAP) is a type of query processing and multidimensional analysis performed on data stored in a Data Warehouse.\n\n## Data Warehouse Basic Concepts\n\nA Data Warehouse is designed to:\n\n- Support querying and analysis of data, not transactions\n- Provide a single version of the truth\n- Enable data to be accessed from multiple sources\n- Ensure data is accurate, consistent, and complete\n- Provide fast access to data through the use of indexes and summarizations\n\n## Data Cube and OLAP\n\nA **Data Cube** is a multidimensional representation of data, where data is organized into dimensions and measures. The dimensions define the attributes used to analyze the data, and the measures represent the numerical facts or values being analyzed.\n\nOLAP systems allow users to perform multidimensional analysis on data cubes, including:\n\n- Slicing and dicing data along different dimensions\n- Drilling down into data to view more detailed information\n- Pivoting data to view it from different perspectives\n\n## Data Warehouse Modeling\n\nData Warehouse modeling involves the design and implementation of a Data Warehouse to support the data analysis requirements of an organization. This includes:\n\n- Identifying the data sources and types of data to be stored\n- Defining the logical and physical data models for the Data Warehouse\n- Designing the Data Warehouse architecture, including the use of Data Cubes and OLAP technologies\n\n## Data Warehouse Design and Usage\n\nEffective Data Warehouse design and usage involves:\n\n- Identifying the business objectives and data analysis requirements\n- Designing the Data Warehouse to support these requirements\n- Implementing and configuring the Data Warehouse, including the use of Data Cubes and OLAP technologies\n- Ensuring data is loaded into the Data Warehouse in a timely and efficient manner\n- Providing training and support to users to ensure they can effectively use the Data Warehouse for analysis\n\n## Data Warehouse Implementation\n\nData Warehouse implementation involves:\n\n- Choosing the right Data Warehouse technology and architecture\n- Designing the Data Warehouse schema and data models\n- Loading data into the Data Warehouse, including data cleansing and transformation\n- Implementing Data Cubes and OLAP technologies for querying and analysis\n- Configuring the Data Warehouse for performance and scalability\n\n## Data Generalization by Attribute-Oriented Induction\n\nData generalization is a technique used to preserve the confidentiality of data while still allowing for useful analysis. This is achieved by replacing detailed data with more generalized data, while preserving the statistical properties of the original data.\n\nAttribute-Oriented Induction is a method for identifying and generalizing data using a set of rules based on the attributes of the data.\n\n## Data Cube Computation\n\nData Cube computation involves the efficient calculation and retrieval of data from a Data Cube, including:\n\n- Aggregating data across dimensions\n- Drilling down into data to view more detailed information\n- Pivoting data to view it from different perspectives\n- Calculating complex queries and calculations on the data\n\n---\n\n## References\n\n- Agarwal, R. K., & Agarwal, V. (2014). Data cube technology: Concepts and applications. Springer Science & Business Media.\n- Fayyad, U. M., & Reina, M. T. (1993). From data mining to knowledge discovery. IEEE Intelligent Systems, 18(3), 28-37.\n- Han, J., & Kamber, M. (2012). Data mining: Concepts and techniques. Morgan Kaufmann.",
-                    "data transformation and data discretization": " # Data Transformation and Data Discretization\n\nData Transformation and Data Discretization are essential concepts in the field of Data Warehousing and Data Mining. These techniques help in preparing data for analysis, improving data quality, and reducing the dimensionality of data. In this note, we will discuss these concepts in detail.\n\n## Data Transformation\n\nData Transformation is the process of converting data from one format to another or modifying data to make it suitable for analysis. The main aim of data transformation is to ensure that data is consistent, complete, and clean before it is loaded into a data warehouse. Some common data transformation techniques include:\n\n- **Data Cleansing**: Removing errors, inconsistencies, and duplicates from data.\n- **Data Integration**: Combining data from different sources and merging them into a single view.\n- **Data Mapping**: Converting data from one format to another, such as converting data from CSV to SQL.\n- **Data Masking**: Hiding sensitive data while keeping the rest of the data intact.\n\n## Data Discretization\n\nData Discretization is a data transformation technique used to convert continuous data into discrete values. This technique is useful when dealing with large amounts of data or when the data has a large number of distinct values. Discretization reduces the dimensionality of data and improves data analysis performance. The main steps involved in data discretization are:\n\n1. **Determining the number of intervals**: Deciding on the number of intervals or bins to divide the data into.\n2. **Defining the interval boundaries**: Setting the boundaries of each interval.\n3. **Assigning values to intervals**: Mapping each data value to an interval.\n\nThere are different methods for performing data discretization, such as:\n\n- **Equal-width discretization**: Dividing the data into equal-sized intervals.\n- **Equal-frequency discretization**: Dividing the data into intervals such that each interval contains approximately the same number of data points.\n- **Clustering-based discretization**: Grouping data points into clusters and defining the boundaries of each cluster.\n\n## References\n\nSome recommended references for further reading on Data Transformation and Data Discretization are:\n\n- Jiawei Han, Micheline Kamber, Jian Pei, _Data Mining: Concepts and Techniques_, Elsevier\n- Margaret H Dunham, _Data Mining Introductory and Advanced Topics_, Pearson Education\n\nAdditional resources for further study are:\n\n- Amitesh Sinha, _Data Warehousing_, Thomson Learning, India\n- Xingdong Wu, Vipin Kumar, _The Top Ten Algorithms in Data Mining_, CRC Press, UK\n\n## AJU-Diploma in Computer Science & Engineering Syllabus\n\nFor more information on Data Transformation and Data Discretization, refer to the syllabus for the AJU-Diploma in Computer Science & Engineering (Batch 2020).\n\n| **Topic**          | **Page No.** |\n|--------------------|--------------|\n| Data Transformation  | 196          |\n| Data Discretization   | 196          |"
+                    "data transformation and data discretization": " # Data Transformation and Data Discretization\n\nData Transformation and Data Discretization are essential concepts in the field of Data Warehousing and Data Mining. These techniques help in preparing data for analysis, improving data quality, and reducing the dimensionality of data. In this note, we will discuss these concepts in detail.\n\n## Data Transformation\n\nData Transformation is the process of converting data from one format to another or modifying data to make it suitable for analysis. The main aim of data transformation is to ensure that data is consistent, complete, and clean before it is loaded into a data warehouse. Some common data transformation techniques include:\n\n- **Data Cleansing**: Removing errors, inconsistencies, and duplicates from data.\n- **Data Integration**: Combining data from different sources and merging them into a single view.\n- **Data Mapping**: Converting data from one format to another, such as converting data from CSV to SQL.\n- **Data Masking**: Hiding sensitive data while keeping the rest of the data intact.\n\n## Data Discretization\n\nData Discretization is a data transformation technique used to convert continuous data into discrete values. This technique is useful when dealing with large amounts of data or when the data has a large number of distinct values. Discretization reduces the dimensionality of data and improves data analysis performance. The main steps involved in data discretization are:\n\n1. **Determining the number of intervals**: Deciding on the number of intervals or bins to divide the data into.\n2. **Defining the interval boundaries**: Setting the boundaries of each interval.\n3. **Assigning values to intervals**: Mapping each data value to an interval.\n\nThere are different methods for performing data discretization, such as:\n\n- **Equal-width discretization**: Dividing the data into equal-sized intervals.\n- **Equal-frequency discretization**: Dividing the data into intervals such that each interval contains approximately the same number of data points.\n- **Clustering-based discretization**: Grouping data points into clusters and defining the boundaries of each cluster.\n\n## References\n\nSome recommended references for further reading on Data Transformation and Data Discretization are:\n\n- Jiawei Han, Micheline Kamber, Jian Pei, _Data Mining: Concepts and Techniques_, Elsevier\n- Margaret H Dunham, _Data Mining Introductory and Advanced Topics_, Pearson Education\n\nAdditional resources for further study are:\n\n- Amitesh Sinha, _Data Warehousing_, Thomson Learning, India\n- Xingdong Wu, Vipin Kumar, _The Top Ten Algorithms in Data Mining_, CRC Press, UK\n\n## AJU-Diploma in Computer Science & Engineering Syllabus\n\nFor more information on Data Transformation and Data Discretization, refer to the syllabus for the AJU-Diploma in Computer Science & Engineering (Batch 2020).\n\n| **Topic**          | **Page No.** |\n|--------------------|--------------|\n| Data Transformation  | 196          |\n| Data Discretization   | 196          |",
+                    "data warehouse implementation": " # Data Warehouse Implementation\n\nData Warehouse is a large, centralized, and integrated database used for reporting and data analysis. It is designed to support complex queries and analysis of data from various sources. In this section, we will discuss the implementation of a Data Warehouse system.\n\n## Data Warehouse Modeling - Data Cube and OLAP\n\nData Warehouse modeling is the process of creating a logical and physical design of the Data Warehouse. The most common Data Warehouse model is the _Star Schema_, which consists of a central fact table surrounded by related dimension tables. The result is a data cube, which allows for Online Analytical Processing (OLAP), enabling multidimensional analysis and data mining.\n\n```markdown\n**Fact Table**\n- Contains measures or facts\n- Key: fact key\n- Foreign keys: foreign keys linking to dimension tables\n\n**Dimension Table**\n- Contains descriptive attributes\n- Key: dimension key\n- Foreign key: foreign key linking to fact table\n```\n\n## Data Warehouse Design and Usage\n\nThe Data Warehouse design process includes choosing a database management system, defining the data model, creating the physical database, and loading the data. Data Warehouse is used for business intelligence, data analysis, and reporting. It enables organizations to make informed decisions by providing access to historical data.\n\n## Data Generalization by Attribute-Oriented Induction\n\nData Generalization is the process of reducing the level of detail in data to maintain privacy and protect sensitive information. Attribute-Oriented Induction is a method used for data generalization, where the attributes are modified to remove sensitive information while preserving the overall data structure.\n\n## Data Cube Computation\n\nData Cube computation is the process of aggregating data from the fact table based on the dimensions. This results in a multi-dimensional view of the data, enabling efficient querying and analysis.\n\n## Patterns, Associations, and Correlations\n\nPattern mining refers to the discovery of interesting relationships and correlations in data. Association mining is a specific type of pattern mining, which focuses on discovering frequent itemsets and associations in large datasets.\n\n## With a Database or Data Warehouse System\n\n### Major Issues in Data Mining\n\nData mining faces various issues, such as dealing with large datasets, handling noise and outliers, and ensuring data privacy.\n\n### Types of Data Sets and Attribute Values\n\nData mining can be applied to various types of data, including transactional, time-series, and spatial data. Attribute values can be continuous, categorical, or a combination.\n\n### Basic Statistical Descriptions of Data\n\nStatistical measures, such as mean, median, mode, standard deviation, and skewness, can provide insights into the data distribution and properties.\n\n### Data Visualization\n\nVisualization techniques, like graphs, charts, and histograms, help in understanding the data and discovering patterns.\n\n### Measuring Data Similarity\n\nSimilarity measures, such as Jaccard similarity, Cosine similarity, and Euclidean distance, can be used to compare the similarity between data items or records.\n\n## Preprocessing Data\n\n### Data Quality\n\nData quality is essential for accurate and reliable data mining results. Preprocessing includes tasks like data cleaning, normalization, and data integration.\n\n### Major Tasks in Data Preprocessing\n\nData preprocessing tasks include data reduction, data transformation, data discretization, and data cleaning.\n\n### Data Reduction\n\nData reduction techniques, such as PCA and clustering, help in reducing the dimensionality of the data, making it easier to process and analyze.\n\n### Data Transformation and Data Discretization\n\nData transformation techniques, like normalization and log transformations, help in preparing the data for mining, while discretization converts continuous data into categorical form.\n\n### Data Cleaning and Data Integration\n\nData cleaning is the process of removing noise, inconsistencies, and errors in the data, while data integration involves combining data from multiple sources into a unified format.\n\nReferences: [1], [2], [3]\n\n---\n\n[1] Data Warehouse: Concepts, Design, Implementation and Management.\n[2] Data Mining: Concepts and Techniques.\n[3] Data Preprocessing for Data Mining.",
+                    "data preprocessing": " # Data Preprocessing\n\nData preprocessing is an essential step in the data mining process, which aims to transform and clean raw data into a format that is suitable for analysis. This phase is crucial",
+                    "olap": " # OLAP (Online Analytical Processing)\n\nOLAP is a technology that enables fast analysis and multidimensional querying and reporting of data in data warehouses. It's designed to handle large volumes of data and complex analytical queries.\n\n## Data Cube and OLAP Operations\n\nA data cube is a multi-dimensional array of data, where each dimension represents a particular aspect of the data and each cell represents a measure of that data. OLAP operations include:\n\n- **Slicing:** Cutting the cube along one dimension to view the data from that perspective.\n- **Dicing:** Cutting the cube along multiple dimensions to view the data in smaller subsets.\n- **Drilling:** Navigating from a high-level view of the data to a more detailed view.\n- **Rolling:** Navigating from a detailed view of the data back to a summarized view.\n\n**Scenario:** Suppose a retail company wants to analyze sales data. The data is stored in a cube with dimensions for Product, Category, Region, and Time. A query to find sales for a specific product in a particular region during a certain time period would involve slicing by Product, dicing by Region and Time, and drilling down to view the detailed sales data.\n\n## Star and Snowflake Schemas\n\n**Star schema** is a simplified design for data warehouses, where data is modeled around a central fact table and all dimensions are directly connected to it. This makes querying and reporting more efficient.\n\n**Snowflake schema**, on the other hand, separates dimensions into their own tables, creating a more normalized design. This can lead to data redundancy but also allows for greater flexibility and easier maintenance of dimensions.\n\n## Attribute-Oriented Induction\n\n**Attribute-oriented induction** is a method used in data generalization, which is the process of transforming data to maintain privacy while preserving its analytical value. The goal is to identify patterns and relationships in the data and use them to generate generalized data that retains the same analytical properties.\n\n## Data Cube Computation\n\nTo compute a data cube, the following steps are typically used:\n\n1. **Data Integration:** Combine data from various sources.\n2. **Data Cleansing:** Clean and preprocess the data.\n3. **Data Transformation:** Apply data aggregation, data normalization, and data dimensionality reduction.\n4. **Data Loading:** Load data into the data warehouse.\n5. **Data Cubing:** Perform multidimensional aggregation.\n\nChallenges include dealing with large volumes of data and complex queries, as well as maintaining data consistency and security.\n\n## Drill-Down and Roll-Up\n\n**Drill-down** is the process of navigating from a high-level view of the data to a more detailed view, while **roll-up** is the opposite \u2013 navigating from a detailed view back to a summarized view. These operations allow for more granular analysis and reporting.\n\n## Data Warehousing and Business Intelligence\n\nData warehouses are used to store large amounts of data for business intelligence (BI) purposes, as they enable efficient querying and reporting. BI allows organizations to analyze their data to gain insights, identify trends, and make informed decisions.\n\n## Data Generalization Example\n\nAn example of data generaization could be anonymizing customer data to protect privacy while still maintaining usefulness for analysis. This might involve replacing specific customer identifiers with generic labels, such as \"Customer X\" or \"Customer in Region A\".",
+                    "data cube": " # Data Warehouse: Understanding Data Cube and OLAP\n\nIn the realm of data warehousing, two essential concepts stand out: Data Cube and Online Analytical Processing (OLAP). In this session, we'll delve into the fundamental concepts of data warehousing, data modeling, and data cubes, followed by an exploration of OLAP, its operations, and its significance.\n\n## Data Warehouse Modeling: Data Cube and OLAP\n\n1. **Data Warehouse**: A large, centralized, and integrated repository of data designed to support decision-making processes by providing fast and concurrent access to data for different subjects and analytical perspectives.\n2. **Data Cube**: A multidimensional data structure used in OLAP for analyzing data, allowing users to view data in multiple dimensions and analyze it along various perspectives.\n3. **OLAP (Online Analytical Processing)**: A type of database management system (DBMS) designed to provide high-performance, multidimensional data analysis using complex analytical queries, drill-down, roll-up, slice-and-dice, and pivot capabilities.\n\n## OLAP Operations on a Data Cube\n\n**Scenario**: Consider a retail business that sells various products across multiple regions. The data cube would allow users to analyze sales data along different dimensions such as product categories, regions, time, and customer demographics.\n\n1. **Slicing**: Analyzing data along a single dimension, e.g., sales by product categories.\n2. **Dicing**: Analyzing data across multiple dimensions, e.g., sales by product categories and regions.\n3. **Roll-up**: Aggregating data from lower levels to higher levels, e.g., sales by year instead of sales by month or day.\n4. **Drill-down**: Analyzing data from higher levels to lower levels, e.g., sales analysis by day, then by hour.\n\n## Star vs. Snowflake Schemas\n\n**Star Schema**: A simple, normalized schema with a central fact table and dimension tables."
                 },
                 "summary": "No documents found in the database. Please use /add or /load first.",
                 "images": {
@@ -120,6 +341,11 @@
                         "path": "data\\dwdm\\images\\20260226_111855_generate_an_image_of_a_diagram.png",
                         "prompt": "\"Create a minimalist, white background image of an unlabeled, clearly defined heart diagram. The heart should be easily recognizable with distinct outlines, showcasing its intricate chamber structures and blood flow pathways. No text or additional elements should be present in the image.\"",
                         "created_at": "2026-02-26T11:18:55.501700"
+                    },
+                    "generate an image of a constellation": {
+                        "path": "data\\dwdm\\images\\20260227_074121_generate_an_image_of_a_constel.png",
+                        "prompt": "Title: \"Minimalist Constellation Illustration\"\n\nCreate a visually descriptive and educational image on a white background. Depict a clear, tranquil night sky with a minimalist style. Label each prominent star and constellation in the image using clean, white text.\n\n1. Start by adding a large, star-filled night sky, blending shades of dark blue and black.\n2. Place the constellation Orion near the center of the image, easily recognizable by its three-star belt and the large square of Betelgeuse. Label this constellation clearly.\n3. Place the constellation Ursa Major to the north, with its distinct Big Dipper asterism and its two pointers. Label this constellation as well.\n4. Include the constellation of Cassiopeia, an W-shaped constellation, just north of Orion. Label it",
+                        "created_at": "2026-02-27T07:41:22.025201"
                     }
                 }
             },
@@ -137,8 +363,346 @@
                     },
                     "timestamp": "2026-02-25T23:26:26.737Z",
                     "project": "dwdm"
+                },
+                {
+                    "mode": "deep",
+                    "score": 6,
+                    "total": 20,
+                    "percentage": 30,
+                    "breakdown": {
+                        "Data Preprocessing": {
+                            "correct": 1,
+                            "total": 5
+                        },
+                        "Data Mining Systems": {
+                            "correct": 2,
+                            "total": 5
+                        },
+                        "Data Mining Functionalities": {
+                            "correct": 1,
+                            "total": 5
+                        },
+                        "Decision Tree Induction": {
+                            "correct": 2,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-26T08:49:50.095Z",
+                    "project": "dwdm"
+                },
+                {
+                    "mode": "quick",
+                    "score": 3,
+                    "total": 5,
+                    "percentage": 60,
+                    "breakdown": {
+                        "all": {
+                            "correct": 3,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-26T08:52:21.949Z",
+                    "project": "dwdm"
+                },
+                {
+                    "mode": "targeted",
+                    "score": 2,
+                    "total": 5,
+                    "percentage": 40,
+                    "breakdown": {
+                        "Data Preprocessing": {
+                            "correct": 2,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T00:52:52.627Z",
+                    "project": "dwdm"
+                },
+                {
+                    "mode": "targeted",
+                    "score": 5,
+                    "total": 5,
+                    "percentage": 100,
+                    "breakdown": {
+                        "Data Mining Functionalities": {
+                            "correct": 5,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T00:54:06.284Z",
+                    "project": "dwdm"
+                },
+                {
+                    "mode": "quick",
+                    "score": 4,
+                    "total": 5,
+                    "percentage": 80,
+                    "breakdown": {
+                        "all": {
+                            "correct": 4,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T01:16:46.721Z",
+                    "project": "dwdm"
+                },
+                {
+                    "mode": "targeted",
+                    "score": 1,
+                    "total": 5,
+                    "percentage": 20,
+                    "breakdown": {
+                        "Data Preprocessing": {
+                            "correct": 1,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T01:25:20.394Z",
+                    "project": "dwdm",
+                    "time_spent": 11
+                },
+                {
+                    "mode": "targeted",
+                    "score": 1,
+                    "total": 5,
+                    "percentage": 20,
+                    "breakdown": {
+                        "Data Preprocessing": {
+                            "correct": 1,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T02:35:44.733Z",
+                    "project": "dwdm",
+                    "time_spent": 12
+                },
+                {
+                    "mode": "survival",
+                    "score": 3,
+                    "total": 6,
+                    "percentage": 50,
+                    "breakdown": {
+                        "all": {
+                            "correct": 3,
+                            "total": 6
+                        }
+                    },
+                    "timestamp": "2026-02-27T02:38:33.328Z",
+                    "project": "dwdm",
+                    "time_spent": 50
+                },
+                {
+                    "mode": "targeted",
+                    "score": 5,
+                    "total": 5,
+                    "percentage": 100,
+                    "breakdown": {
+                        "Data Reduction": {
+                            "correct": 5,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-27T02:51:18.494Z",
+                    "project": "dwdm",
+                    "time_spent": 84
+                },
+                {
+                    "mode": "zen",
+                    "score": 0,
+                    "total": 3,
+                    "percentage": 0,
+                    "breakdown": {
+                        "undefined": {
+                            "correct": 0,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-27T04:12:56.780Z",
+                    "project": "dwdm",
+                    "time_spent": 15
+                },
+                {
+                    "mode": "zen",
+                    "score": 2,
+                    "total": 3,
+                    "percentage": 67,
+                    "breakdown": {
+                        "General": {
+                            "correct": 2,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-27T04:18:24.472Z",
+                    "project": "dwdm",
+                    "time_spent": 19
+                },
+                {
+                    "mode": "zen",
+                    "score": 1,
+                    "total": 3,
+                    "percentage": 33,
+                    "breakdown": {
+                        "General": {
+                            "correct": 1,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-27T04:21:17.360Z",
+                    "project": "dwdm",
+                    "time_spent": 32
+                },
+                {
+                    "mode": "zen",
+                    "score": 2,
+                    "total": 3,
+                    "percentage": 67,
+                    "breakdown": {
+                        "General": {
+                            "correct": 2,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-27T04:24:16.916Z",
+                    "project": "dwdm",
+                    "time_spent": 18
+                },
+                {
+                    "mode": "zen",
+                    "score": 3,
+                    "total": 3,
+                    "percentage": 100,
+                    "breakdown": {
+                        "General": {
+                            "correct": 3,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-27T04:25:19.793Z",
+                    "project": "dwdm",
+                    "time_spent": 19
+                },
+                {
+                    "mode": "zen",
+                    "score": 0,
+                    "total": 3,
+                    "percentage": 0,
+                    "breakdown": {
+                        "General": {
+                            "correct": 0,
+                            "total": 3
+                        }
+                    },
+                    "timestamp": "2026-02-28T05:52:06.248Z",
+                    "project": "dwdm",
+                    "time_spent": 14
+                },
+                {
+                    "mode": "targeted",
+                    "score": 1,
+                    "total": 5,
+                    "percentage": 20,
+                    "breakdown": {
+                        "Data Reduction": {
+                            "correct": 1,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-28T06:22:00.870Z",
+                    "project": "dwdm",
+                    "time_spent": 27
+                },
+                {
+                    "mode": "targeted",
+                    "score": 0,
+                    "total": 5,
+                    "percentage": 0,
+                    "breakdown": {
+                        "Data Preprocessing": {
+                            "correct": 0,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-28T06:25:10.844Z",
+                    "project": "dwdm",
+                    "time_spent": 10
+                },
+                {
+                    "mode": "quick",
+                    "score": 0,
+                    "total": 5,
+                    "percentage": 0,
+                    "breakdown": {
+                        "all": {
+                            "correct": 0,
+                            "total": 5
+                        }
+                    },
+                    "timestamp": "2026-02-28T07:56:05.311Z",
+                    "project": "dwdm",
+                    "time_spent": 13
                 }
-            ]
+            ],
+            "mastery": {
+                "Data Preprocessing": {
+                    "attempted": 20,
+                    "correct": 4,
+                    "accuracy": 20,
+                    "last_attempt": "2026-02-28T11:55:11.164193",
+                    "total_time": 33,
+                    "avg_speed": 36.4,
+                    "best_speed": 39.1
+                },
+                "Data Mining Functionalities": {
+                    "attempted": 5,
+                    "correct": 5,
+                    "accuracy": 100,
+                    "last_attempt": "2026-02-27T06:24:06.603823"
+                },
+                "Data Reduction": {
+                    "attempted": 10,
+                    "correct": 6,
+                    "accuracy": 60,
+                    "total_time": 111,
+                    "avg_speed": 5.4,
+                    "last_attempt": "2026-02-28T11:52:00.877809",
+                    "best_speed": 5.4
+                },
+                "undefined": {
+                    "attempted": 3,
+                    "correct": 0,
+                    "accuracy": 0,
+                    "total_time": 15,
+                    "avg_speed": 12.0,
+                    "last_attempt": "2026-02-27T09:42:56.788878",
+                    "best_speed": 12.0
+                },
+                "General": {
+                    "attempted": 15,
+                    "correct": 8,
+                    "accuracy": 53,
+                    "total_time": 102,
+                    "avg_speed": 8.8,
+                    "last_attempt": "2026-02-28T11:22:06.566958",
+                    "best_speed": 9.5
+                }
+            }
+        },
+        "DWDM 2": {
+            "loaded_files": [
+                "data\\DWDM 2\\dwdm question bank.pdf"
+            ],
+            "cache": {
+                "topics": " [\"Data Mining\", \"Role of Data Mining in Decision Making\", \"Kinds of Data in Data Mining\", \"Data Mining Issues\", \"Data Warehouse Cycle\", \"Data Preprocessing in Data Mining\", \"Binning\", \"Data Integration vs Data Cleaning\", \"Data Transformation\", \"Missing Values in Data\", \"Data Warehouse Architecture\", \"OLTP vs Data Warehouse\", \"OLAP Operations on Data Cube\", \"Star vs Snowflake Schemas in Data Warehousing\", \"Attribute-oriented Induction\", \"Computing a Data Cube\", \"Drill-down and Roll-up\", \"Business Intelligence and Data Warehousing\", \"Data Generalization in Knowledge Discovery\", \"Frequent Itemset and Apriori Algorithm\", \"Closed vs Maximal Frequent Itemsets\", \"Constraint-based Frequent Pattern Mining\", \"Lift and Confidence as Pattern Evaluation Metrics\", \"Correlation Analysis in Association Rule Mining\", \"Long Frequent Patterns in Data Mining\", \"Supervised, Unsupervised, and Semi-Supervised Learning\", \"Frequent Pattern Mining in Recommendation Systems\", \"Decision Tree Induction\", \"Eager vs Lazy Learners\", \"Ensemble Methods\", \"ID3 Algorithm\", \"Naive Bayes Classifier\"]",
+                "quizzes": {},
+                "flashcards": {},
+                "notes": {
+                    "supervised, unsupervised, and semi-supervised learning": " # Supervised, Unsupervised, and Semi-Supervised Learning\n\nData mining is a process of discovering patterns and knowledge from large amounts of data. Three major types of machine learning techniques used in data mining are supervised learning, unsupervised learning, and semi-supervised learning.\n\n## Supervised Learning\nSupervised learning is a type of machine learning where an algorithm is trained on labeled data, i.e., data that has known outputs. The model learns to map inputs to outputs based on this labeled data. Commonly used supervised learning algorithms are:\n\n- **Decision Trees**\n- **Support Vector Machines (SVMs)**\n- **Neural Networks**\n- **Naive Bayes Classifiers**\n\n### Benefits and Limitations of SVMs\nSupport Vector Machines (SVMs) are a type of supervised learning algorithm that can be used for both classification and regression tasks. They work by finding the optimal hyperplane that separates data points of different classes with the maximum margin.\n\n#### Benefits\n- Can handle high-dimensional data\n- Effective in handling data with noise\n- Can be used for non-linear classification with the help of the kernel trick\n\n#### Limitations\n- Requires large amounts of training data\n- Computationally expensive\n- Not suitable for real-time applications\n\n## Unsupervised Learning\nUnsupervised learning is a type of machine learning where an algorithm is applied to unlabeled data, i.e., data without known outputs. The algorithm tries to find hidden patterns or structures in the data. Commonly used unsupervised learning techniques are:\n\n- **Clustering**\n- **Anomaly Detection**\n- **Dimensionality Reduction**\n\n### Clustering\n**Clustering** is an unsupervised learning technique used to group similar data points together. The goal is to find natural groupings or clusters within the data. Clustering helps to:\n\n- Discover hidden patterns and relationships in data\n- Reduce dimensionality\n- Analyze data without prior knowledge of structure\n\n#### Clustering Importance\nClustering is essential in various applications, such as:\n\n- Market segmentation\n- Customer profiling\n- Anomaly detection\n- Image segmentation\n\n### Comparison of Partitioning Methods and Hierarchical Clustering Methods\n\n#### Partitioning Methods\n**Partitioning methods** try to divide the dataset into non-overlapping clusters. K-means is an example of a partitioning method.\n\n##### K-means Clustering\nK-means is an unsupervised learning algorithm that aims to partition a dataset into k clusters, where k is a user-defined number.\n\n#### Hierarchical Clustering Methods\n**Hierarchical clustering methods** build a hierarchical tree structure, where each node represents a cluster. The hierarchy can be visualized as a dendrogram.\n\n##### DBSCAN\n**DBSCAN** is a density-based clustering algorithm that can handle noise and discover clusters of arbitrary shapes. It identifies clusters based on their density and spatial proximity.\n\n### DBSCAN with an Example\nSuppose we have the following dataset:\n\n```css\n3, 5.0\n3, 5.2\n3, 5.5\n3.1, 5.1\n3.2, 5.1\n3.5, 5.0\n3.6, 5.3\n```\n\nWe set the *epsilon* value to 2 and the *minimum number of points* to 2. DBSCAN will consider points within a distance of 2 as neighbors. Clusters are formed based on density, and points with more neighbors will merge closer, forming larger clusters.\n\n#### DBSCAN Handling Noise\nDBSCAN considers points with a lower density as outliers or noise points. These points are not part of any cluster and are not included in the final result.\n\n## Semi-Supervised Learning\nSemi-supervised learning is a type of machine learning where an algorithm is trained on a combination of labeled and unlabeled data. The model learns from both the labeled data and the unlabeled data to improve performance.\n\n### Model-Based Clustering\n**Model-based clustering** is a method that assumes data follows a specific generative model. Gaussian Mixture Models (GMMs) are an example of model-based clustering algorithms.\n\n### Importance of Outlier Detection\n**Outlier detection** is an essential process in data analysis and machine learning. Outliers can be caused by measurement errors, data entry errors, or they might represent rare events. Outlier detection can help to:\n\n- Improve data quality\n- Detect fraudulent transactions\n- Enhance model performance\n\n#### Challenges in Mining Long Frequent Patterns and Handling Them\nMining long frequent patterns, i.e., patterns with a large number of items, can be challenging due to the following reasons:\n\n- Increased computational complexity\n- The possibility of generating redundant patterns\n- Difficulty in understanding complex patterns\n\nTo address these challenges, various techniques can be used, such as:\n\n- Approximate pattern mining\n- Pattern generalization\n- Pattern simplification\n- Pattern pruning."
+                },
+                "summary": " # Ques Pearson Bank: Data Warehouse and Data Mining\n\nData mining is the process of extracting valuable patterns, trends, and insights from large datasets using machine learning, statistical, and mathematical techniques [1]. It plays a crucial role in decision-making by enabling organizations to gain deeper understanding of their data and make data-driven predictions [1].\n\n## Data Mining and Decision Making\n\nData mining helps in decision making by discovering hidden patterns, correlations, and insights from data. These patterns can be used for various purposes such as forecasting future trends, customer segmentation, risk analysis, and process optimization [1].\n\n## Data Types in Data Mining\n\nData mining deals with various types of data including transactional data, time-series data, spatial data, text data, and social network data [1]. Each type of data requires specific data mining techniques to extract meaningful insights.\n\n## Issues in Data Mining\n\nSome major issues in data mining include data quality, data preprocessing, data selection, feature selection, model selection, overfitting, and scalability [1].\n\n## Data Warehouse Cycle\n\nThe data warehouse cycle consists of four stages: data acquisition, data integration, data transformation, and data delivery [5].\n\n## Role of Data Preprocessing\n\nData preprocessing is an essential step in the data mining process as it involves cleaning, transforming, and integrating data to ensure its quality and suitability for mining [6].\n\n## Binning\n\nBinning is a data transformation technique used to divide a dataset into non-overlapping intervals called bins based on specific criteria [7]. For example, equal-frequency binning divides the dataset into bins of equal size based on the frequency of data points [7].\n\n## Data Integration vs Data Cleaning\n\nData integration is the process of combining data from multiple sources into a single view, while data cleaning is the process of removing or correcting errors, inconsistencies, and noise from data [8].\n\n## Data Transformation\n\nData transformation involves converting raw data into a more suitable format for mining using techniques such as normalization, scaling, binning, and feature extraction [9].\n\n## Missing Values in Data Mining\n\nMissing values can impact mining results by reducing the accuracy and completeness of the dataset [10]. Missing values can be handled using techniques such as imputation, deletion, and estimation.\n\n## Data Warehouse Architecture\n\nData warehouses are large, centralized repositories designed to support reporting, analysis, and data mining activities [11]. Data warehouses differ from OLTP systems in their data modeling, data access, and query optimization [12].\n\n## OLAP Operations\n\nOLAP (Online Analytical Processing) operations include drill-down, roll-up, slice-and-dice, and pivot, which enable users to analyze data from different perspectives and levels of granularity [17].\n\n## Business Intelligence and Data Warehousing\n\nData warehousing and business intelligence are closely related as data warehouses provide the foundation for various business intelligence activities such as reporting, analysis, and data mining [18].\n\n## Data Generalization and Knowledge Discovery\n\nData generalization is the process of simplifying data to preserve confidentiality while retaining the useful information for knowledge discovery [19]. An example of data generalization is replacing specific values with general categories [19].\n\n## Frequent Itemset Mining\n\nFrequent itemsets are groups of items that appear together frequently in a dataset, and frequent itemset mining is the process of discovering them [20]. Frequent itemsets are significant in data mining as they can reveal association rules and help in recommendation systems [20].\n\n## Apriori Algorithm\n\nThe Apriori algorithm is a popular algorithm for mining frequent itemsets and association rules using the candidate generation-and-test strategy [21].\n\n## Closed and Maximal Frequent Itemsets\n\nClosed frequent itemsets are frequent itemsets where no proper super-set has the same frequency, while maximal frequent itemsets are frequent itemsets that cannot be extended by adding another item [22].\n\n## Constraint-based Frequent Pattern Mining\n\nConstraint-based frequent pattern mining is used to find patterns that meet certain user-defined constraints in addition to the minimum support and confidence [23].\n\n## Lift and Confidence as Pattern Evaluation Metrics\n\nLift and confidence are two evaluation metrics used to assess the performance of frequent pattern mining algorithms [24]. Lift measures the degree to which an itemset has a higher association than would be expected by chance, while confidence measures the reliability of the discovered association rule [24].\n\n## Importance of Correlation Analysis in Association Rule Mining\n\nCorrelation analysis is essential in association rule mining as it helps to identify strong relationships between items, which can lead to valuable insights and recommendations [25].\n\n## Mining Long Frequent Patterns\n\nMining long frequent patterns can be challenging due to the large amount of data and computational complexity, which can be addressed using techniques such as parallel processing, pruning, and pattern growth [26].\n\n## Comparison of Supervised, Unsupervised, and Semi-supervised Learning\n\nSupervised learning involves learning from labeled data, unsupervised learning involves learning from unlabeled data, and semi-supervised learning involves learning from a combination of labeled and unlabeled data [27].\n\n## Role of Frequent Pattern Mining in Recommendation Systems\n\nFrequent pattern mining is crucial in recommendation systems as it helps to identify frequent itemsets and generate recommendations based on users' historical preferences [28].\n\n## Decision Tree Induction\n\nDecision tree induction is the process of creating a decision tree model by recursively partitioning the dataset based on the selected features and thresholds [29].\n\n## Difference between Eager and Lazy Learners\n\nEager learners build a decision tree model at training time based on the entire dataset, while lazy learners build the model incrementally as new data is encountered [30].\n\n## Ensemble Methods for Improving Classification Accuracy\n\nEnsemble methods combine multiple classifiers to improve the overall classification accuracy and reduce the risk of overfitting [31].\n\n## ID3 Algorithm\n\nThe ID3 algorithm is a decision tree learning algorithm that uses information gain as a measure of feature relevance to select the best split at each node [32].\n\n## Naive Bayes Classifier\n\nThe Naive Bayes classifier is a probabilistic machine learning model based on Bayes' theorem, which assumes the independence of features given the class [33].\n\n## Frequent Itemsets and Strong Association Rules for a Transactional Database",
+                "images": {}
+            },
+            "results": [],
+            "mastery": {}
         }
     }
 }

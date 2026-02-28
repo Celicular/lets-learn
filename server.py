@@ -3,12 +3,13 @@ import json
 import shutil
 import asyncio
 import datetime
-from fastapi import FastAPI, UploadFile, File, HTTPException
+from fastapi import FastAPI, UploadFile, File, HTTPException, Request
 from fastapi.responses import StreamingResponse
 from fastapi.middleware.cors import CORSMiddleware
 from contextlib import asynccontextmanager
 from pydantic import BaseModel
 from typing import List
+from transformers import AutoTokenizer, AutoModelForSeq2SeqLM
 
 from rag_core import (
     load_llm, add_docs, chunk_text, generate_answer, clear_db,
@@ -71,6 +72,60 @@ MODEL_PATH = os.path.join(MODELS_DIR, "mistral.gguf")
 os.makedirs(DATA_DIR, exist_ok=True)
 os.makedirs(MODELS_DIR, exist_ok=True)
 
+
+os.environ["TRANSFORMERS_OFFLINE"] = "1"
+os.environ["HF_HUB_OFFLINE"] = "1"
+
+
+MODEL_NAME = "facebook/nllb-200-distilled-600M"
+
+try:
+    print(f"🌍 Loading Translation Model: {MODEL_NAME}...")
+
+    tokenizer = AutoTokenizer.from_pretrained(
+        MODEL_NAME,
+        use_fast=False   # 🔥 critical for NLLB
+    )
+
+    model = AutoModelForSeq2SeqLM.from_pretrained(MODEL_NAME)
+
+    print("✅ Translation Model Ready.")
+
+except Exception as e:
+    print(f"⚠️ Could not load translation model: {e}")
+    tokenizer = None
+    model = None
+
+def en_hi(text):
+    if not model or not tokenizer:
+        return text
+
+    tokenizer.src_lang = "eng_Latn"
+
+    inputs = tokenizer(text, return_tensors="pt")
+
+    translated_tokens = model.generate(
+        **inputs,
+        forced_bos_token_id=tokenizer.convert_tokens_to_ids("hin_Deva"),
+        max_length=512
+    )
+
+    hi = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
+    return hi
+
+def hi_en(text):
+    if not model or not tokenizer:
+        return text
+    tokenizer.src_lang = "hin_Deva"
+    inputs = tokenizer(text, return_tensors="pt")
+    translated_tokens = model.generate(
+        **inputs,
+        forced_bos_token_id=tokenizer.convert_tokens_to_ids("eng_Latn"),
+        max_length=512
+    )
+    en = tokenizer.batch_decode(translated_tokens, skip_special_tokens=True)[0]
+    return en
+
 llm = None
 
 def load_projects_data():
@@ -99,6 +154,9 @@ def load_projects_data():
             if "images" not in proj.get("cache", {}):
                 proj.setdefault("cache", {})["images"] = {}
                 changed = True
+            if "mastery" not in proj:
+                proj["mastery"] = {}
+                changed = True
         if changed:
             save_projects_data(data)
         return data
@@ -117,6 +175,7 @@ class ProjectCreate(BaseModel):
 
 class ChatRequest(BaseModel):
     query: str
+    lang: str = "en"
     k: int = 2
     max_chars: int = 1500
 
@@ -232,7 +291,7 @@ import threading
 llm_lock = threading.Lock()
 
 @app.post("/chat")
-async def chat(req: ChatRequest):
+async def chat(req: ChatRequest, request: Request):
     """Streams the real-time AI reply text directly to the frontend based on the currently loaded memory."""
     if not llm:
         raise HTTPException(status_code=500, detail="LLM is not loaded. Ensure Mistral model exists.")
@@ -241,15 +300,31 @@ async def chat(req: ChatRequest):
     if llm_lock.locked():
         raise HTTPException(status_code=429, detail="AI is currently processing another request.")
         
-    def stream_generator():
+    query = req.query
+    if req.lang == "hi":
+        print(f"🔄 Translating Hindi input to English: {query}")
+        query = hi_en(query)
+        print(f"✅ Translated: {query}")
+
+    async def stream_generator():
         with llm_lock:
-            stream = generate_answer(llm, req.query, k=req.k, max_chars=req.max_chars)
+            stream = generate_answer(llm, query, k=req.k, max_chars=req.max_chars)
             for chunk in stream:
+                if await request.is_disconnected():
+                    print("🛑 [CHAT] Client disconnected, aborting generation.")
+                    break
                 text = chunk["choices"][0].get("text", "")
                 if text:
                     yield text
                 
     return StreamingResponse(stream_generator(), media_type="text/plain")
+
+
+@app.post("/translate")
+async def translate(req: dict):
+    """Translates English text to Hindi using NLLB. Offloaded to thread to prevent blocking AI stream."""
+    hi_text = await asyncio.to_thread(en_hi, req["text"])
+    return {"hi": hi_text}
 
 
 class VisualChatRequest(BaseModel):
@@ -260,7 +335,7 @@ class VisualChatRequest(BaseModel):
 
 
 @app.post("/chat/visual")
-async def chat_visual(req: VisualChatRequest):
+async def chat_visual(req: VisualChatRequest, request: Request):
     """Local multimodal streaming chat: text + Mermaid diagram or SD image."""
     if not llm:
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
@@ -281,6 +356,9 @@ async def chat_visual(req: VisualChatRequest):
             with llm_lock:
                 text_stream = generate_answer(llm, req.query, k=req.k, max_chars=req.max_chars, is_visual=(route == "diagram"))
                 for chunk in text_stream:
+                    if await request.is_disconnected():
+                        print("🛑 [VISUAL CHAT] Client disconnected, aborting generation.")
+                        break
                     text = chunk["choices"][0].get("text", "")
                     if text:
                         full_text += text
@@ -336,7 +414,7 @@ async def list_project_images(project_name: str):
     return {"project": project_name, "images": images}
 
 @app.post("/projects/{project_name}/chat/contextual")
-async def chat_contextual(project_name: str, req: ContextualChatRequest):
+async def chat_contextual(project_name: str, req: ContextualChatRequest, request: Request):
     """Streams the real-time AI reply text directly to the frontend based on explicitly selected text."""
     if not llm:
         raise HTTPException(status_code=500, detail="LLM is not loaded. Ensure Mistral model exists.")
@@ -345,10 +423,13 @@ async def chat_contextual(project_name: str, req: ContextualChatRequest):
     if llm_lock.locked():
         raise HTTPException(status_code=429, detail="AI is currently processing another request.")
         
-    def stream_generator():
+    async def stream_generator():
         with llm_lock:
             stream = generate_contextual_answer(llm, req.selected_text, req.query)
             for chunk in stream:
+                if await request.is_disconnected():
+                    print("🛑 [CONTEXTUAL CHAT] Client disconnected, aborting generation.")
+                    break
                 text = chunk["choices"][0].get("text", "")
                 if text:
                     yield text
@@ -356,11 +437,11 @@ async def chat_contextual(project_name: str, req: ContextualChatRequest):
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
 @app.post("/projects/{project_name}/quiz")
-async def generate_quiz_endpoint(project_name: str, req: QuizRequest):
-    """Generates a quiz for the given project. Caches result by topic (not 'all')."""
+async def generate_quiz_endpoint(project_name: str, req: QuizRequest, request: Request):
+    """Generates a quiz for the given project. Smart caching by topic."""
+    import random as _random
     print(f"\n📥 [REQUEST] POST /projects/{project_name}/quiz | Count: {req.count} | Topic: '{req.topic}'")
     if not llm:
-        print("❌ [ERROR] LLM is not loaded.")
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
     data = load_projects_data()
     if project_name not in data["projects"]:
@@ -368,37 +449,88 @@ async def generate_quiz_endpoint(project_name: str, req: QuizRequest):
 
     topic_key = req.topic.lower().strip()
     cache = data["projects"][project_name]["cache"]
+    
+    # Initialize cache pool for topic if not exists
+    if topic_key not in cache["quizzes"]:
+        cache["quizzes"][topic_key] = []
+    
+    # Ensure cache is a list (migration if it was a string before)
+    if isinstance(cache["quizzes"][topic_key], str):
+        try:
+            cache["quizzes"][topic_key] = json.loads(cache["quizzes"][topic_key])
+        except:
+            cache["quizzes"][topic_key] = []
 
-    # Return from cache if already generated for this specific topic
-    if topic_key != "all" and topic_key in cache["quizzes"]:
-        print(f"⚡ [CACHE] Returning cached quiz for topic: '{topic_key}'")
-        cached = cache["quizzes"][topic_key]
-        return StreamingResponse(iter([cached]), media_type="application/json" if req.fmt == "json" else "text/plain")
+    cached_pool = cache["quizzes"][topic_key]
+    
+    # Randomization Helper: Shuffle options and return randomized sample
+    def finalize_quiz(pool, count):
+        sample = _random.sample(pool, min(len(pool), count))
+        # Ensure shuffling of options for each question
+        final = []
+        for q in sample:
+            q_copy = q.copy()
+            options = q_copy["options"]
+            _random.shuffle(options)
+            q_copy["options"] = options
+            final.append(q_copy)
+        return final
 
-    extra_context = ""
-    if topic_key == "all":
-        extra_context = "\n".join(cache.get("notes", {}).values())
-    else:
-        extra_context = cache.get("notes", {}).get(topic_key, "")
+    # Case 1: We have enough in cache
+    if len(cached_pool) >= req.count:
+        print(f"⚡ [CACHE] Returning {req.count} randomized questions from pool ({len(cached_pool)} total)")
+        final_quiz = finalize_quiz(cached_pool, req.count)
+        return StreamingResponse(iter([json.dumps(final_quiz)]), media_type="application/json")
 
-    def stream_generator():
+    # Case 2: Need to generate more
+    diff = req.count - len(cached_pool)
+    print(f"🧠 [AI] Generating {diff} additional questions for topic: '{topic_key}'")
+
+    extra_context = cache.get("notes", {}).get(topic_key, "") if topic_key != "all" else "\n".join(cache.get("notes", {}).values())
+
+    async def stream_generator():
         full_response = []
-        for chunk in generate_quiz(llm, req.count, req.fmt, req.topic, extra_context=extra_context):
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                full_response.append(text)
-                yield text
-        # Save to cache (only for specific topics, not 'all')
-        if topic_key != "all":
-            result = data.copy()
-            result["projects"][project_name]["cache"]["quizzes"][topic_key] = "".join(full_response)
-            save_projects_data(result)
-            print(f"💾 [CACHE] Saved quiz for topic: '{topic_key}'")
+        with llm_lock:
+            # Generate the difference
+            for chunk in generate_quiz(llm, diff, "json", req.topic, extra_context=extra_context):
+                if await request.is_disconnected():
+                    print("🛑 [QUIZ] Client disconnected, aborting generation.")
+                    return # Exit generator early
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    full_response.append(text)
+                
+        # Parse new questions and update cache
+        try:
+            raw_new = "".join(full_response)
+            import re as _re
+            # More robust regex to find JSON array even if LLM adds fluff
+            match = _re.search(r'\[\s*\{.*\}\s*\]', raw_new, _re.DOTALL)
+            if match:
+                new_qs = json.loads(match.group(0))
+                # Add to pool
+                updated_data = load_projects_data()
+                updated_pool = updated_data["projects"][project_name]["cache"]["quizzes"].get(topic_key, [])
+                if isinstance(updated_pool, str): updated_pool = []
+                updated_pool.extend(new_qs)
+                updated_data["projects"][project_name]["cache"]["quizzes"][topic_key] = updated_pool
+                save_projects_data(updated_data)
+                
+                # Combine original cache + new and return requested count
+                combined = cached_pool + new_qs
+                final_quiz = finalize_quiz(combined, req.count)
+                yield json.dumps(final_quiz)
+            else:
+                print("⚠️ [QUIZ] Failed to find valid JSON array in LLM response.")
+                yield json.dumps(finalize_quiz(cached_pool, req.count)) # Return whatever we have in cache
+        except Exception as e:
+            print(f"❌ [ERROR] Cache update failed: {e}")
+            yield "".join(full_response) # Fallback to raw if logic fails
 
-    return StreamingResponse(stream_generator(), media_type="application/json" if req.fmt == "json" else "text/plain")
+    return StreamingResponse(stream_generator(), media_type="application/json")
 
 @app.post("/projects/{project_name}/flashcards")
-async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest):
+async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest, request: Request):
     """Generates flashcards for the given project. Caches result by topic (not 'all')."""
     print(f"\n📥 [REQUEST] POST /projects/{project_name}/flashcards | Count: {req.count} | Topic: '{req.topic}'")
     if not llm:
@@ -422,13 +554,17 @@ async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest)
     else:
         extra_context = cache.get("notes", {}).get(topic_key, "")
 
-    def stream_generator():
+    async def stream_generator():
         full_response = []
-        for chunk in generate_flashcards(llm, req.count, req.topic, extra_context=extra_context):
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                full_response.append(text)
-                yield text
+        with llm_lock:
+            for chunk in generate_flashcards(llm, req.count, req.topic, extra_context=extra_context):
+                if await request.is_disconnected():
+                    print("🛑 [FLASHCARDS] Client disconnected, aborting generation.")
+                    break
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    full_response.append(text)
+                    yield text
         result = data.copy()
         result["projects"][project_name]["cache"]["flashcards"][topic_key] = "".join(full_response)
         save_projects_data(result)
@@ -437,7 +573,7 @@ async def generate_flashcards_endpoint(project_name: str, req: FlashcardRequest)
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
 @app.post("/projects/{project_name}/notes")
-async def generate_notes_endpoint(project_name: str, req: NotesRequest):
+async def generate_notes_endpoint(project_name: str, req: NotesRequest, request: Request):
     """Generates study notes for the given topic. Caches result by topic."""
     from rag_core import generate_notes
     print(f"\n📥 [REQUEST] POST /projects/{project_name}/notes | Topic: '{req.topic}'")
@@ -456,14 +592,18 @@ async def generate_notes_endpoint(project_name: str, req: NotesRequest):
         cached = cache["notes"][topic_key]
         return StreamingResponse(iter([cached]), media_type="text/plain")
 
-    def stream_generator():
+    async def stream_generator():
         full_response = []
-        for chunk in generate_notes(llm, req.topic):
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                full_response.append(text)
-                yield text
-        result = data.copy()
+        with llm_lock:
+            for chunk in generate_notes(llm, req.topic):
+                if await request.is_disconnected():
+                    print("🛑 [NOTES] Client disconnected, aborting generation.")
+                    break
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    full_response.append(text)
+                    yield text
+        result = load_projects_data() # Reload to avoid race conditions
         result["projects"][project_name]["cache"]["notes"][topic_key] = "".join(full_response)
         save_projects_data(result)
         print(f"💾 [CACHE] Saved notes for topic: '{topic_key}'")
@@ -471,9 +611,9 @@ async def generate_notes_endpoint(project_name: str, req: NotesRequest):
     return StreamingResponse(stream_generator(), media_type="text/plain")
 
 @app.get("/projects/{project_name}/topics")
-async def extract_topics_endpoint(project_name: str):
+async def extract_topics_endpoint(project_name: str, request: Request, check_cached: bool = False):
     """Extracts key topics from the project memory. Caches result per project."""
-    print(f"\n📥 [REQUEST] GET /projects/{project_name}/topics")
+    print(f"\n📥 [REQUEST] GET /projects/{project_name}/topics | Check Cached: {check_cached}")
     if not llm:
         print("❌ [ERROR] LLM is not loaded.")
         raise HTTPException(status_code=500, detail="LLM is not loaded.")
@@ -483,18 +623,26 @@ async def extract_topics_endpoint(project_name: str):
 
     cache = data["projects"][project_name]["cache"]
 
-    if cache["topics"] is not None:
-        print(f"⚡ [CACHE] Returning cached topics for project: '{project_name}'")
-        return StreamingResponse(iter([cache["topics"]]), media_type="application/json")
+    if check_cached:
+        if cache["topics"] is not None:
+            print(f"⚡ [CACHE] Returning cached topics for project: '{project_name}'")
+            return StreamingResponse(iter([cache["topics"]]), media_type="application/json")
+        else:
+            print(f"⏭️ [CACHE] No cached topics found for '{project_name}', returning empty list as check_cached=True")
+            return StreamingResponse(iter(["[]"]), media_type="application/json")
 
-    def stream_generator():
+    async def stream_generator():
         full_response = []
-        for chunk in generate_topics(llm):
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                full_response.append(text)
-                yield text
-        result = data.copy()
+        with llm_lock:
+            for chunk in generate_topics(llm):
+                if await request.is_disconnected():
+                    print("🛑 [TOPICS] Client disconnected, aborting generation.")
+                    break
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    full_response.append(text)
+                    yield text
+        result = load_projects_data()
         result["projects"][project_name]["cache"]["topics"] = "".join(full_response)
         save_projects_data(result)
         print(f"💾 [CACHE] Saved topics for project: '{project_name}'")
@@ -503,7 +651,7 @@ async def extract_topics_endpoint(project_name: str):
 
 
 @app.post("/projects/{project_name}/summary")
-async def generate_summary_endpoint(project_name: str):
+async def generate_summary_endpoint(project_name: str, request: Request):
     """Generates a summary for all uploaded documents in a project. Caches the result."""
     from rag_core import generate_summary
     print(f"\n📥 [REQUEST] POST /projects/{project_name}/summary")
@@ -521,14 +669,18 @@ async def generate_summary_endpoint(project_name: str):
         cached = cache["summary"]
         return StreamingResponse(iter([cached]), media_type="text/plain")
 
-    def stream_generator():
+    async def stream_generator():
         full_response = []
-        for chunk in generate_summary(llm):
-            text = chunk["choices"][0].get("text", "")
-            if text:
-                full_response.append(text)
-                yield text
-        result = data.copy()
+        with llm_lock:
+            for chunk in generate_summary(llm):
+                if await request.is_disconnected():
+                    print("🛑 [SUMMARY] Client disconnected, aborting generation.")
+                    break
+                text = chunk["choices"][0].get("text", "")
+                if text:
+                    full_response.append(text)
+                    yield text
+        result = load_projects_data()
         result["projects"][project_name]["cache"]["summary"] = "".join(full_response)
         save_projects_data(result)
         print(f"💾 [CACHE] Saved summary for project: '{project_name}'")
@@ -546,8 +698,67 @@ async def save_project_results(project_name: str, req: ResultSaveRequest):
         data["projects"][project_name]["results"] = []
         
     data["projects"][project_name]["results"].append(req.result)
+    
+    # Update Mastery Stats
+    if "breakdown" in req.result:
+        mastery = data["projects"][project_name].setdefault("mastery", {})
+        time_spent = req.result.get("time_spent", 0)
+        total_questions = req.result.get("total", 0)
+
+        for topic, stats in req.result["breakdown"].items():
+            if topic == "all": continue
+            
+            # Attribute time proportionally to number of questions per topic in multi-topic sessions
+            topic_time = (stats["total"] / total_questions) * time_spent if total_questions > 0 else 0
+            
+            t_data = mastery.setdefault(topic, {
+                "attempted": 0, "correct": 0, "accuracy": 0, 
+                "total_time": 0, "avg_speed": 0, "last_attempt": None
+            })
+            
+            t_data["attempted"] += stats["total"]
+            t_data["correct"] += stats["correct"]
+            t_data["accuracy"] = round((t_data["correct"] / t_data["attempted"]) * 100)
+            
+            # Update total time and speed (Questions per Minute)
+            t_data["total_time"] = round(t_data.get("total_time", 0) + topic_time)
+            if t_data["total_time"] > 0:
+                # Questions Per Minute calculation
+                current_speed = round((t_data["attempted"] / t_data["total_time"]) * 60, 1)
+                t_data["avg_speed"] = current_speed
+                
+                # Track best speed (peak performance)
+                t_data["best_speed"] = max(t_data.get("best_speed", 0), current_speed)
+                
+            t_data["last_attempt"] = datetime.datetime.now().isoformat()
+            
     save_projects_data(data)
     return {"message": "Result saved successfully"}
+
+@app.get("/projects/{project_name}/mastery")
+async def get_project_mastery(project_name: str):
+    """Returns the mastered topics and accuracy for the heatmap."""
+    data = load_projects_data()
+    if project_name not in data["projects"]:
+        raise HTTPException(status_code=404, detail="Project not found")
+        
+    mastery = data["projects"][project_name].get("mastery", {})
+    
+    # Add intensity level for frontend
+    enriched = {}
+    for topic, d in mastery.items():
+        acc = d["accuracy"]
+        level = "weak"
+        if acc > 80: level = "mastered"
+        elif acc > 60: level = "good"
+        elif acc > 30: level = "practice"
+        
+        enriched[topic] = {
+            **d,
+            "level": level
+        }
+        
+    return {"project": project_name, "mastery": enriched}
 # Optional: Run directly with `python server.py`
 if __name__ == "__main__":
     import uvicorn

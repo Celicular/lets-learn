@@ -1,6 +1,9 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { BarChart2, Trophy, Target, BookOpen, Shuffle, Trash2 } from 'lucide-react';
+import { BarChart2, Trophy, Target, BookOpen, Shuffle, Trash2, Activity, Loader, Download } from 'lucide-react';
+import MasteryHeatmap from './MasteryHeatmap';
+
+const API = 'http://localhost:8000';
 
 const MODE_LABELS = {
   quick: { label: 'Quick Quiz', icon: <Target className="w-4 h-4 stroke-[3px]" />, color: 'bg-indigo-400 text-slate-900 border-2 border-slate-900 shadow-[2px_2px_0px_#0f172a] uppercase tracking-widest' },
@@ -33,6 +36,147 @@ function ScoreRing({ pct }) {
 }
 
 export default function AnalyticsView({ results, onClear }) {
+  const [masteryData, setMasteryData] = useState({});
+  const [isLoadingMastery, setIsLoadingMastery] = useState(false);
+  
+  // Get current active project from results if available
+  const activeProj = results.length > 0 ? results[0].project : null;
+
+  useEffect(() => {
+    if (activeProj) {
+        fetchMastery();
+    }
+  }, [activeProj, results]);
+
+  const fetchMastery = async () => {
+    try {
+        setIsLoadingMastery(true);
+        const res = await fetch(`${API}/projects/${activeProj}/mastery`);
+        if (res.ok) {
+            const data = await res.json();
+            setMasteryData(data.mastery || {});
+        }
+    } catch (err) {
+        console.error("Failed to fetch mastery stats", err);
+    } finally {
+        setIsLoadingMastery(false);
+    }
+  };
+
+  const formatTime = (s) => {
+    if (!s) return null;
+    const min = Math.floor(s / 60);
+    const sec = s % 60;
+    return min > 0 ? `${min}m ${sec}s` : `${sec}s`;
+  };
+
+  const handleExport = () => {
+    const avgScore = Math.round(results.reduce((s, r) => s + r.percentage, 0) / results.length);
+    const best = Math.max(...results.map(r => r.percentage));
+    const resultsWithTime = results.filter(r => r.time_spent > 0);
+    const avgSpeed = resultsWithTime.length > 0 
+      ? (resultsWithTime.reduce((s, r) => s + (r.total / (r.time_spent / 60)), 0) / resultsWithTime.length).toFixed(1)
+      : 0;
+
+    const reportHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Study Performance Report - ${activeProj || 'All Projects'}</title>
+        <style>
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700;900&display=swap');
+          * { -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important; color-adjust: exact !important; }
+          body { font-family: 'Inter', sans-serif; background: #e6ebf5 !important; color: #0f172a; padding: 40px; margin: 0; }
+          .report-container { max-width: 900px; margin: 0 auto; background: white !important; border: 4px solid #0f172a; padding: 40px; box-shadow: 12px 12px 0px #0f172a; }
+          .header { border-bottom: 4px solid #0f172a; padding-bottom: 20px; margin-bottom: 30px; display: flex; justify-content: space-between; align-items: flex-end; }
+          .header h1 { margin: 0; font-size: 48px; font-weight: 900; text-transform: uppercase; letter-spacing: -2px; line-height: 0.9; }
+          .header p { margin: 5px 0 0; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: #475569; }
+          .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 20px; margin-bottom: 40px; }
+          .stat-card { border: 4px solid #0f172a; padding: 10px 15px; box-shadow: 6px 6px 0px #0f172a; }
+          .stat-card.yellow { background: #fde047 !important; }
+          .stat-card.cyan { background: #67e8f9 !important; }
+          .stat-card.lime { background: #a3e635 !important; }
+          .stat-card.indigo { background: #a5b4fc !important; }
+          .stat-value { font-size: 32px; font-weight: 900; }
+          .stat-label { font-size: 10px; font-weight: 900; text-transform: uppercase; border-top: 2px solid #0f172a; margin-top: 5px; padding-top: 5px; }
+          .section-title { font-size: 24px; font-weight: 900; text-transform: uppercase; margin-bottom: 20px; border-left: 12px solid #0f172a; padding-left: 15px; }
+          .mastery-item { margin-bottom: 20px; }
+          .mastery-header { display: flex; justify-content: space-between; font-weight: 900; text-transform: uppercase; font-size: 14px; margin-bottom: 5px; }
+          .progress-bg { height: 20px; background: white !important; border: 4px solid #0f172a; box-shadow: 4px 4px 0px #0f172a; overflow: hidden; }
+          .progress-fill { height: 100%; border-right: 4px solid #0f172a; }
+          .history-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          .history-table th { background: #0f172a !important; color: white !important; padding: 12px; text-align: left; text-transform: uppercase; font-size: 12px; font-weight: 900; }
+          .history-table td { padding: 12px; border: 2px solid #0f172a; font-weight: 700; font-size: 13px; }
+          .mode-tag { font-size: 10px; font-weight: 900; text-transform: uppercase; padding: 2px 6px; border: 2px solid #0f172a; box-shadow: 2px 2px 0px #0f172a; background: white !important; }
+          @media print { body { padding: 0; } .report-container { box-shadow: none; border: 4px solid #0f172a; max-width: 100%; } }
+        </style>
+      </head>
+      <body>
+        <div class="report-container">
+          <div class="header">
+            <div>
+              <h1>Performance Report</h1>
+              <p>${activeProj || 'All Projects'} // Generated on ${new Date().toLocaleDateString()}</p>
+            </div>
+          </div>
+
+          <div class="stat-grid">
+            <div class="stat-card yellow"><div class="stat-value">${results.length}</div><div class="stat-label">Total Quizzes</div></div>
+            <div class="stat-card cyan"><div class="stat-value">${avgScore}%</div><div class="stat-label">Average Score</div></div>
+            <div class="stat-card lime"><div class="stat-value">${best}%</div><div class="stat-label">Best Score</div></div>
+            <div class="stat-card indigo"><div class="stat-value">${avgSpeed}</div><div class="stat-label">Avg Q/Min</div></div>
+          </div>
+
+          <div class="section-title">Topic Mastery</div>
+          <div style="margin-bottom: 40px;">
+            ${Object.entries(masteryData).map(([topic, data]) => {
+              const pct = data.accuracy;
+              const color = pct >= 70 ? '#a3e635' : pct >= 40 ? '#fde047' : '#f87171';
+              return `
+                <div class="mastery-item">
+                  <div class="mastery-header"><span>${topic}</span><span>${pct}% Accuracy // ${data.attempted} Qs</span></div>
+                  <div class="progress-bg"><div class="progress-fill" style="width: ${pct}%; background: ${color} !important;"></div></div>
+                </div>
+              `;
+            }).join('')}
+          </div>
+
+          <div class="section-title">Quiz History</div>
+          <table class="history-table">
+            <thead>
+              <tr>
+                <th>Date</th>
+                <th>Mode</th>
+                <th>Score</th>
+                <th>Time</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${[...results].reverse().map(r => `
+                <tr>
+                  <td>${new Date(r.timestamp).toLocaleDateString()}</td>
+                  <td><span class="mode-tag">${r.mode}</span></td>
+                  <td>${r.score}/${r.total} (${r.percentage}%)</td>
+                  <td>${r.time_spent ? (r.time_spent >= 60 ? Math.floor(r.time_spent/60)+'m '+(r.time_spent%60)+'s' : r.time_spent+'s') : 'N/A'}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+          
+          <div style="margin-top: 50px; text-align: center; font-weight: 900; font-size: 12px; text-transform: uppercase; color: #94a3b8;">
+            Generated by LetsLearn AI Platform
+          </div>
+        </div>
+        <script>window.print();</script>
+      </body>
+      </html>
+    `;
+
+    const win = window.open('', '_blank');
+    win.document.write(reportHtml);
+    win.document.close();
+  };
+
   if (results.length === 0) {
     return (
       <div className="w-full h-full flex flex-col items-center justify-center p-8 text-center bg-[#e6ebf5]">
@@ -49,6 +193,11 @@ export default function AnalyticsView({ results, onClear }) {
 
   const avgScore = Math.round(results.reduce((s, r) => s + r.percentage, 0) / results.length);
   const best = Math.max(...results.map(r => r.percentage));
+  
+  const resultsWithTime = results.filter(r => r.time_spent > 0);
+  const avgSpeed = resultsWithTime.length > 0 
+    ? (resultsWithTime.reduce((s, r) => s + (r.total / (r.time_spent / 60)), 0) / resultsWithTime.length).toFixed(1)
+    : 0;
 
   return (
     <div className="w-full h-full flex flex-col p-8 overflow-y-auto bg-[#e6ebf5]">
@@ -57,17 +206,23 @@ export default function AnalyticsView({ results, onClear }) {
           <h1 className="text-3xl font-black text-slate-900 mb-2 uppercase tracking-tight">My Results</h1>
           <p className="text-slate-900 font-bold bg-white border-2 border-slate-900 px-3 py-1 shadow-[4px_4px_0px_#0f172a] inline-block">Track your learning performance over time.</p>
         </div>
-        <button onClick={onClear} className="flex items-center gap-2 px-6 py-3 bg-red-400 text-slate-900 border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] font-black uppercase tracking-widest hover:bg-red-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]">
-          <Trash2 className="w-5 h-5 stroke-[3px]" /> Clear All
-        </button>
+        <div className="flex items-center gap-4">
+          <button onClick={handleExport} className="flex items-center gap-2 px-6 py-3 bg-yellow-300 text-slate-900 border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] font-black uppercase tracking-widest hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]">
+            <Download className="w-5 h-5 stroke-[3px]" /> Export Report
+          </button>
+          <button onClick={onClear} className="flex items-center gap-2 px-6 py-3 bg-red-400 text-slate-900 border-4 border-slate-900 shadow-[6px_6px_0px_#0f172a] font-black uppercase tracking-widest hover:bg-red-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]">
+            <Trash2 className="w-5 h-5 stroke-[3px]" /> Clear All
+          </button>
+        </div>
       </div>
 
       {/* Summary stats */}
-      <div className="grid grid-cols-3 gap-6 mb-10">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
         {[
           { label: 'Total Quizzes', value: results.length, icon: <Trophy className="w-8 h-8 text-slate-900 stroke-[2px]" />, bg: 'bg-yellow-300' },
           { label: 'Average Score', value: `${avgScore}%`, icon: <BarChart2 className="w-8 h-8 text-slate-900 stroke-[2px]" />, bg: 'bg-cyan-300' },
           { label: 'Best Score', value: `${best}%`, icon: <Target className="w-8 h-8 text-slate-900 stroke-[2px]" />, bg: 'bg-lime-300' },
+          { label: 'Average Speed', value: `${avgSpeed} Q/M`, icon: <Activity className="w-8 h-8 text-slate-900 stroke-[2px]" />, bg: 'bg-indigo-300' },
         ].map((stat, i) => (
           <motion.div key={i} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}
             className={`${stat.bg} border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] p-6 flex items-center gap-6 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all`}>
@@ -78,6 +233,20 @@ export default function AnalyticsView({ results, onClear }) {
             </div>
           </motion.div>
         ))}
+      </div>
+
+      {/* Mastery Heatmap Section */}
+      <div className="mb-10">
+        <div className="bg-white border-4 border-slate-900 p-6 shadow-[8px_8px_0px_#0f172a]">
+          {isLoadingMastery ? (
+            <div className="flex flex-col items-center justify-center py-12">
+                <Loader className="w-10 h-10 animate-spin text-indigo-500 mb-4 stroke-[3px]" />
+                <p className="font-black text-slate-900 uppercase tracking-widest text-sm">Analyzing Strengths...</p>
+            </div>
+          ) : (
+            <MasteryHeatmap mastery={masteryData} />
+          )}
+        </div>
       </div>
 
       {/* Result cards */}
@@ -104,8 +273,20 @@ export default function AnalyticsView({ results, onClear }) {
                     <div className="font-black text-2xl text-slate-900 uppercase tracking-tight mb-1">
                       {r.score} / {r.total} CORRECT
                     </div>
-                    <div className="font-bold text-slate-900 uppercase tracking-widest text-sm bg-slate-100 border-2 border-slate-900 px-2 py-1 shadow-[2px_2px_0px_#0f172a] inline-block mt-2">
-                       {new Date(r.timestamp).toLocaleString()}
+                    <div className="flex items-center gap-4 mt-2">
+                      <div className="font-bold text-slate-900 uppercase tracking-widest text-[10px] bg-slate-100 border-2 border-slate-900 px-2 py-1 shadow-[2px_2px_0px_#0f172a] inline-block">
+                        {new Date(r.timestamp).toLocaleString()}
+                      </div>
+                      {r.time_spent > 0 && (
+                        <div className="font-black text-indigo-700 uppercase tracking-widest text-[10px] bg-indigo-50 border-2 border-indigo-900 px-2 py-1 shadow-[2px_2px_0px_#4338ca] inline-block">
+                           ⏱️ {formatTime(r.time_spent)}
+                        </div>
+                      )}
+                      {r.time_spent > 0 && (
+                        <div className="font-black text-emerald-700 uppercase tracking-widest text-[10px] bg-emerald-50 border-2 border-emerald-900 px-2 py-1 shadow-[2px_2px_0px_#059669] inline-block">
+                           🏎️ {(r.total / (r.time_spent / 60)).toFixed(1)} Q/MIN
+                        </div>
+                      )}
                     </div>
 
                     {/* Topic breakdown */}

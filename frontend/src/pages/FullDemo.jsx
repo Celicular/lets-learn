@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   MessageSquare, Layers, Target, BookOpen, BarChart2, 
   ChevronRight, FileText, BrainCircuit, Sparkles, Plus,
-  UploadCloud, Send, Cpu, X, Folder, FolderOpen, Settings, ArrowLeft, Check, Menu, Activity
+  UploadCloud, Send, Cpu, X, Folder, FolderOpen, Settings, ArrowLeft, Check, Menu, Activity, Zap
 } from 'lucide-react';
 
 import TopicsView from '../components/TopicsView';
@@ -17,6 +17,8 @@ import SummaryView from '../components/SummaryView';
 import ContextualChat from '../components/ContextualChat';
 import DashboardView from '../components/DashboardView';
 import CallView from '../components/CallView';
+import FocusTimer from '../components/FocusTimer';
+import { useTimer } from '../utils/TimerContext';
 import { useTextSelection } from '../utils/useTextSelection';
 import { Mic, MicOff, Volume2, VolumeX, Phone, PhoneOff, Square } from 'lucide-react';
 
@@ -37,6 +39,8 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
   const [autoSpeak, setAutoSpeak] = useState(false);
   const [isListening, setIsListening] = useState(false);
   const [abortController, setAbortController] = useState(null);
+  const [zoomedMermaid, setZoomedMermaid] = useState(null);
+  const [zoomedImage, setZoomedImage] = useState(null);
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -55,6 +59,15 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
   useEffect(() => {
     mermaid.run({ querySelector: '.mermaid-diagram' }).catch(() => {});
   }, [messages]);
+
+  // Re-render zoomed mermaid when it opens
+  useEffect(() => {
+    if (zoomedMermaid) {
+      setTimeout(() => {
+        mermaid.run({ querySelector: '.zoomed-mermaid' }).catch(() => {});
+      }, 50);
+    }
+  }, [zoomedMermaid]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -285,26 +298,31 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
   };
 
   return (
-    <div className="w-full h-full flex flex-col bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden relative">
-      <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between shrink-0">
-        <h2 className="font-extrabold text-slate-900 flex items-center gap-2">
-          <MessageSquare className="w-5 h-5 text-indigo-500" /> AI Tutor Chat
+    <div className="w-full h-full flex flex-col bg-white border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] overflow-hidden relative">
+      <div className="bg-indigo-400 px-6 py-4 border-b-4 border-slate-900 flex items-center justify-between shrink-0">
+        <h2 className="font-black text-slate-900 flex items-center gap-3 uppercase tracking-widest text-lg">
+          <div className="w-10 h-10 bg-white border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] flex items-center justify-center shrink-0">
+            <MessageSquare className="w-6 h-6 text-slate-900 stroke-[3px]" />
+          </div>
+          AI Tutor Chat
         </h2>
         <div className="flex items-center gap-3">
           <button 
             onClick={() => setShowCallWarning(true)}
-            className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-indigo-500 to-violet-500 text-white rounded-xl font-bold text-sm shadow-md hover:shadow-lg hover:scale-105 transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 bg-yellow-300 text-slate-900 border-4 border-slate-900 font-black text-sm uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]"
           >
-            <Phone className="w-4 h-4" />
+            <Phone className="w-5 h-5 stroke-[3px]" />
             <span className="hidden sm:inline">Speak with AI</span>
           </button>
           
-          <label className="flex items-center cursor-pointer gap-2 mr-1 ml-2" title="Uses less text context to respond faster" onClick={() => setLightweightContext(!lightweightContext)}>
-            <div className="relative inline-block w-8 h-4 bg-slate-200 rounded-full transition-colors duration-200 ease-in-out" style={{ backgroundColor: lightweightContext ? '#10b981' : '#cbd5e1' }}>
-               <div className={`absolute left-0.5 top-0.5 w-3 h-3 bg-white rounded-full transition-transform duration-200 ease-in-out shadow-sm ${lightweightContext ? 'translate-x-4' : 'translate-x-0'}`}></div>
-            </div>
-            <span className="text-xs font-bold text-slate-500 whitespace-nowrap hidden sm:inline">Fast</span>
-          </label>
+          <button
+            onClick={() => setLightweightContext(!lightweightContext)}
+            className={`flex items-center gap-2 px-4 py-2 border-4 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all ml-2 ${lightweightContext ? 'bg-lime-400 text-slate-900' : 'bg-white text-slate-900'}`}
+            title="Uses less text context to respond faster"
+          >
+             <Activity className="w-4 h-4 stroke-[3px]" />
+             <span className="hidden sm:inline">{lightweightContext ? 'Fast Mode: ON' : 'Fast Mode: OFF'}</span>
+          </button>
           <button
             onClick={() => {
                 setAutoSpeak(prev => {
@@ -312,14 +330,14 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
                     return !prev;
                 });
             }}
-            className={`flex items-center gap-1.5 px-3 py-2 rounded-xl border text-xs font-bold transition-colors shadow-sm ${autoSpeak ? 'bg-amber-50 text-amber-600 border-amber-200' : 'bg-slate-50 text-slate-500 border-slate-200 hover:bg-slate-100'} disabled:opacity-50`}
+            className={`flex items-center gap-2 px-4 py-2 border-4 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all ${autoSpeak ? 'bg-coral-400 text-slate-900' : 'bg-white text-slate-900'}`}
           >
-            {autoSpeak ? <Volume2 className="w-3.5 h-3.5" /> : <VolumeX className="w-3.5 h-3.5" />}
+            {autoSpeak ? <Volume2 className="w-4 h-4 stroke-[3px]" /> : <VolumeX className="w-4 h-4 stroke-[3px]" />}
             <span className="hidden sm:inline">Auto Speak</span>
           </button>
           <button onClick={() => fileInputRef.current?.click()} disabled={!activeProj || isUploading}
-            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 border border-indigo-200 rounded-xl font-bold text-sm hover:bg-indigo-100 transition-colors disabled:opacity-50">
-            {isUploading ? <Cpu className="w-4 h-4 animate-spin" /> : <UploadCloud className="w-4 h-4" />}
+            className="flex items-center gap-2 px-5 py-2.5 bg-white text-slate-900 border-4 border-slate-900 font-black text-sm uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] hover:bg-slate-100 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] disabled:opacity-50">
+            {isUploading ? <Cpu className="w-5 h-5 animate-spin stroke-[3px]" /> : <UploadCloud className="w-5 h-5 stroke-[3px]" />}
             {isUploading ? 'Uploading...' : 'Upload Doc'}
           </button>
         </div>
@@ -333,10 +351,10 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
             <motion.div key={msg.id} initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }}
               className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
             >
-              <div className={`max-w-[85%] px-5 py-3.5 rounded-2xl text-sm font-medium leading-relaxed ${
+              <div className={`max-w-[85%] px-6 py-4 border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] text-sm font-bold leading-relaxed overflow-hidden ${
                 msg.role === 'user' 
-                  ? 'bg-indigo-600 text-white rounded-tr-sm' 
-                  : 'bg-slate-100 text-slate-800 rounded-tl-sm prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-4 first:prose-p:mt-0'
+                  ? 'bg-lime-300 text-slate-900' 
+                  : 'bg-white text-slate-900 prose prose-slate prose-sm max-w-none prose-p:leading-relaxed prose-headings:mb-2 prose-headings:mt-4 first:prose-p:mt-0 prose-headings:font-black prose-headings:uppercase'
               }`}>
                 {msg.role === 'user' ? (
                   <div className="whitespace-pre-wrap">{msg.text}</div>
@@ -346,25 +364,39 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
                       {msg.text.replace(/```(?:mermaid|graph|flowchart)[\s\S]*?(?:```|$)/gi, '').trim()}
                     </ReactMarkdown>
                     {msg.mermaid && (
-                      <div className="mt-4 not-prose bg-white rounded-2xl border border-slate-200 shadow-sm p-4 overflow-auto">
-                        <div className="mermaid-diagram text-xs text-slate-700">{msg.mermaid}</div>
+                      <div 
+                        onClick={() => setZoomedMermaid(msg.mermaid)}
+                        className="mt-4 not-prose bg-white border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] p-4 overflow-auto cursor-zoom-in group/mermaid hover:border-indigo-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                        title="Click to expand"
+                      >
+                        <div className="mermaid-diagram text-xs text-slate-900 font-bold">{msg.mermaid}</div>
+                        <div className="mt-2 text-[10px] font-black uppercase text-indigo-500 opacity-0 group-hover/mermaid:opacity-100 transition-opacity">Click to Expand Diagram</div>
                       </div>
                     )}
                     {msg.image && (
-                      <div className="mt-3 not-prose">
+                      <div className="mt-4 not-prose">
                         <img
                           src={`data:image/png;base64,${msg.image}`}
                           alt="AI-generated visualization"
-                          className="rounded-xl max-w-xs shadow-md border border-slate-200"
+                          onClick={() => setZoomedImage(`data:image/png;base64,${msg.image}`)}
+                          className="max-w-xs border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] cursor-zoom-in hover:scale-[1.02] transition-transform"
                         />
-                        <a
-                          href={`data:image/png;base64,${msg.image}`}
-                          download="visualization.png"
-                          className="inline-flex items-center gap-2 mt-3 px-3 py-1.5 text-xs font-bold text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-100 rounded-lg hover:shadow-sm transition-all group"
-                        >
-                          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="opacity-80 group-hover:opacity-100 group-hover:-translate-y-0.5 transition-all"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
-                          Download Image
-                        </a>
+                        <div className="flex gap-3 mt-4">
+                          <a
+                            href={`data:image/png;base64,${msg.image}`}
+                            download="visualization.png"
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-900 bg-white border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-slate-100 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]"
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                            Download
+                          </a>
+                          <button
+                            onClick={() => setZoomedImage(`data:image/png;base64,${msg.image}`)}
+                            className="inline-flex items-center gap-2 px-4 py-2 text-xs font-black uppercase tracking-widest text-slate-900 bg-yellow-300 border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none"
+                          >
+                            Expand View
+                          </button>
+                        </div>
                       </div>
                     )}
                   </>
@@ -375,49 +407,43 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
         </AnimatePresence>
 
         {isTyping && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
-            <div className="bg-slate-100 rounded-2xl rounded-tl-sm px-5 py-3.5 flex items-center gap-2">
-              <span className="text-slate-500 text-sm font-medium">AI is writing</span>
-              <motion.div animate={{ x: [0, 8, 0, -8, 0], y: [0, -3, 0, 3, 0], rotate: [0, 15, 0, -15, 0] }}
-                transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-indigo-500">
-                  <path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z" /><path d="m15 5 4 4" />
-                </svg>
-              </motion.div>
-            </div>
+           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex justify-start">
+             <div className="bg-white border-4 border-slate-900 px-5 py-3 shadow-[4px_4px_0px_#0f172a] flex gap-2 items-center h-[46px]">
+               <span className="w-2.5 h-2.5 bg-slate-900 animate-pulse"></span>
+               <span className="w-2.5 h-2.5 bg-slate-900 animate-pulse [animation-delay:-0.15s]"></span>
+               <span className="w-2.5 h-2.5 bg-slate-900 animate-pulse [animation-delay:-0.3s]"></span>
+             </div>
             {abortController && (
-              <button onClick={cancelGeneration} className="ml-3 px-3 py-2 flex items-center gap-2 bg-red-50 text-red-600 rounded-xl font-bold text-xs border border-red-200 hover:bg-red-100 transition-colors self-center shadow-sm">
-                <Square className="w-3 h-3 fill-red-600" /> Stop Answering
+              <button onClick={cancelGeneration} className="ml-4 px-4 py-2 flex items-center gap-2 bg-red-400 text-slate-900 border-4 border-slate-900 font-black text-xs uppercase tracking-widest shadow-[4px_4px_0px_#0f172a] hover:bg-red-500 hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] transition-all self-center">
+                <Square className="w-4 h-4 fill-slate-900" /> Stop
               </button>
             )}
-          </motion.div>
+           </motion.div>
         )}
         <div ref={messagesEndRef} />
       </div>
 
-      <div className={`p-4 border-t shrink-0 transition-colors bg-white border-slate-100`}>
-        <form onSubmit={handleSend} className="relative flex items-center">
+      <div className="p-5 bg-white border-t-4 border-slate-900 shrink-0 relative z-10">
+        <form onSubmit={handleSend} className="flex gap-3">
           <input type="text" value={inputVal} onChange={e => setInputVal(e.target.value)}
             placeholder={activeProj ? 'Ask anything about your documents...' : 'Select a project first...'}
             disabled={!activeProj || isBusy}
-            className={`w-full border rounded-2xl pl-5 pr-[6.5rem] py-3.5 text-sm font-medium text-slate-800 focus:outline-none focus:ring-2 focus:border-transparent disabled:opacity-50 transition-colors bg-slate-50 border-slate-200 focus:ring-indigo-400`}
+            className="flex-1 bg-white border-4 border-slate-900 px-4 py-3 text-sm font-black text-slate-900 focus:outline-none focus:bg-slate-50 transition-all shadow-[inset_4px_4px_0_rgba(15,23,42,0.1)] disabled:opacity-50 placeholder:text-slate-400 uppercase tracking-widest placeholder:uppercase"
           />
-          <div className="absolute right-2 flex items-center gap-1.5">
-            <button 
-              type="button"
-              onClick={() => toggleListen()}
-              disabled={isBusy}
-              className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${isListening ? 'bg-rose-100 text-rose-500 animate-pulse shadow-sm' : 'bg-slate-100 text-slate-400 hover:bg-slate-200 hover:text-slate-600'}`}
-              title="Voice Typing"
-            >
-              {isListening ? <Mic className="w-4 h-4" /> : <MicOff className="w-4 h-4" />}
-            </button>
-            <button type="submit" disabled={!inputVal.trim() || !activeProj || isTyping}
-              className="w-10 h-10 bg-indigo-600 text-white rounded-xl flex items-center justify-center hover:bg-indigo-700 transition-colors disabled:opacity-40"
-            >
-              <Send className="w-4 h-4 ml-0.5" />
-            </button>
-          </div>
+          <button 
+            type="button"
+            onClick={() => toggleListen()}
+            disabled={isBusy}
+            className={`w-12 h-[52px] border-4 border-slate-900 flex items-center justify-center transition-all shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] shrink-0 ${isListening ? 'bg-red-400 text-slate-900 animate-pulse' : 'bg-white text-slate-900'}`}
+            title="Voice Typing"
+          >
+            {isListening ? <Mic className="w-5 h-5 stroke-[3px]" /> : <MicOff className="w-5 h-5 stroke-[3px]" />}
+          </button>
+          <button type="submit" disabled={!inputVal.trim() || !activeProj || isTyping}
+            className="w-12 h-[52px] bg-indigo-400 text-slate-900 border-4 border-slate-900 shadow-[4px_4px_0px_#0f172a] hover:bg-indigo-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] disabled:opacity-50 disabled:hover:bg-indigo-400 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[4px_4px_0px_#0f172a] flex items-center justify-center shrink-0"
+          >
+            <Send className="w-5 h-5 stroke-[3px] ml-1" />
+          </button>
         </form>
       </div>
 
@@ -450,6 +476,73 @@ function ChatView({ activeProj, isBusy, setIsBusy }) {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Zoom Modals */}
+      <AnimatePresence>
+        {zoomedMermaid && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-10"
+            onClick={() => setZoomedMermaid(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white border-8 border-slate-900 shadow-[20px_20px_0px_#000] p-6 sm:p-12 w-full max-w-6xl max-h-[90vh] overflow-auto relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setZoomedMermaid(null)}
+                className="absolute top-4 right-4 bg-red-400 border-4 border-slate-900 p-2 shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all z-10"
+              >
+                <X className="w-6 h-6 stroke-[3px]" />
+              </button>
+              <div className="zoomed-mermaid text-slate-900 font-bold min-h-[400px]">
+                {zoomedMermaid}
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+
+        {zoomedImage && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[10000] bg-slate-900/95 backdrop-blur-md flex items-center justify-center p-4 sm:p-10"
+            onClick={() => setZoomedImage(null)}
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white border-8 border-slate-900 shadow-[20px_20px_0px_#000] p-4 w-full max-w-5xl max-h-[90vh] flex flex-col items-center relative"
+              onClick={e => e.stopPropagation()}
+            >
+              <button 
+                onClick={() => setZoomedImage(null)}
+                className="absolute top-4 right-4 bg-red-400 border-4 border-slate-900 p-2 shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-none transition-all z-10"
+              >
+                <X className="w-6 h-6 stroke-[3px]" />
+              </button>
+              <img src={zoomedImage} alt="Zoomed view" className="max-w-full max-h-[75vh] border-4 border-slate-900 object-contain" />
+              <div className="mt-8">
+                 <a
+                    href={zoomedImage}
+                    download="visualization_highres.png"
+                    className="inline-flex items-center gap-3 px-8 py-4 text-sm font-black uppercase tracking-widest text-slate-900 bg-yellow-300 border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] hover:bg-yellow-400 transition-all hover:translate-x-[4px] hover:translate-y-[4px] hover:shadow-none"
+                  >
+                    <UploadCloud className="w-5 h-5 stroke-[3px] rotate-180" />
+                    Download High-Res Version
+                  </a>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }
@@ -471,6 +564,9 @@ export default function FullDemo() {
   const [contextualChatOpen, setContextualChatOpen] = useState(false);
   const [contextualPrompt, setContextualPrompt] = useState('');
   const [activeContextualText, setActiveContextualText] = useState('');
+  
+  const { isHardcore, isActive } = useTimer();
+  const isFocusActive = isHardcore && isActive;
 
   useEffect(() => { fetchProjects(); }, []);
 
@@ -496,6 +592,12 @@ export default function FullDemo() {
         console.error("Failed to sync results to backend", err);
       }
     }
+  };
+
+  const handleContextHelp = (text, prompt = 'Please explain this concept in detail.') => {
+    setActiveContextualText(text);
+    setContextualPrompt(prompt);
+    setContextualChatOpen(true);
   };
 
   const fetchProjects = async () => {
@@ -576,10 +678,11 @@ export default function FullDemo() {
     { id: 'quiz',       label: 'Adaptive Quiz',   icon: <Target className="w-5 h-5" /> },
     { id: 'flashcards', label: 'Flashcards',      icon: <Layers className="w-5 h-5" /> },
     { id: 'results',    label: 'My Results',      icon: <BarChart2 className="w-5 h-5" />, badge: results.length || null },
+    { id: 'focus',      label: 'Focus Timer',     icon: <Zap className="w-5 h-5" /> },
   ];
 
   return (
-    <div className="flex h-[100dvh] w-screen bg-[#f7f8fb] overflow-hidden font-sans relative">
+    <div className={`flex h-[100dvh] w-screen overflow-hidden font-sans relative transition-colors duration-500 ${isFocusActive ? 'bg-slate-900 focus-mode-active' : 'bg-[#f7f8fb]'}`}>
       
       {/* ── Mobile Sidebar Overlay ───────────────────────────── */}
       <AnimatePresence>
@@ -799,7 +902,15 @@ export default function FullDemo() {
           <AnimatePresence mode="wait">
             {activeTab === 'dashboard' && (
               <motion.div key="dashboard" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0">
-                <DashboardView activeProj={activeProj} projects={projects} results={results} onNavigate={t => setActiveTab(t)} />
+                <DashboardView 
+                  activeProj={activeProj} 
+                  projects={projects} 
+                  results={results} 
+                  onNavigate={(tab, topic) => {
+                    setActiveTab(tab);
+                    if (topic) setSelectedTopic(topic);
+                  }} 
+                />
               </motion.div>
             )}
             {activeTab === 'chat' && (
@@ -819,7 +930,14 @@ export default function FullDemo() {
             )}
             {activeTab === 'quiz' && (
               <motion.div key="quiz" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0">
-                <QuizView activeProj={activeProj} onResultSaved={handleResultSaved} setIsBusy={setIsBusy} />
+                <QuizView 
+                    activeProj={activeProj} 
+                    onResultSaved={handleResultSaved} 
+                    setIsBusy={setIsBusy} 
+                    onContextHelp={handleContextHelp} 
+                    initialTopic={selectedTopic}
+                    onResetTopic={() => setSelectedTopic(null)}
+                />
               </motion.div>
             )}
             {activeTab === 'flashcards' && (
@@ -827,9 +945,14 @@ export default function FullDemo() {
                 <FlashcardsView activeProj={activeProj} setIsBusy={setIsBusy} />
               </motion.div>
             )}
-            {activeTab === 'results' && (
+            { activeTab === 'results' && (
               <motion.div key="results" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0">
                 <AnalyticsView results={results} onClear={() => setResults([])} />
+              </motion.div>
+            )}
+            {activeTab === 'focus' && (
+              <motion.div key="focus" initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }} className="absolute inset-0">
+                <FocusTimer />
               </motion.div>
             )}
           </AnimatePresence>

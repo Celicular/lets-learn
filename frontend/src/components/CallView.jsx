@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Phone, PhoneOff, Mic, Square, Loader, ArrowLeft } from 'lucide-react';
+import { Phone, PhoneOff, Mic, Square, Loader, ArrowLeft, ChevronDown, Globe } from 'lucide-react';
 
 const API = 'http://localhost:8000';
 
@@ -12,6 +12,8 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
   const [aiResponse, setAiResponse] = useState('');
   const [currentCaption, setCurrentCaption] = useState('');
   const [highlightIdx, setHighlightIdx] = useState(0);
+  const [selectedLang, setSelectedLang] = useState('en-US'); // 'en-US' or 'hi-IN'
+  const [showLangMenu, setShowLangMenu] = useState(false);
   
   const [abortController, setAbortController] = useState(null);
   
@@ -22,6 +24,9 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
   const speechQueueRef = useRef([]);
   const isSpeechPlayingRef = useRef(false);
   const responseBufferRef = useRef('');
+  const translationCacheRef = useRef(new Map());
+  const translateBufferRef = useRef([]);
+  const isProcessingRef = useRef(false);
   
   const [audioLevel, setAudioLevel] = useState(0);
   const audioContextRef = useRef(null);
@@ -33,6 +38,15 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
 
   // Keep state sync for timeouts
   useEffect(() => { inputRefState.current = transcript; }, [transcript]);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+       if (selectedLang === 'hi-IN' && translateBufferRef.current.length > 0 && isProcessingRef.current) {
+          flushTranslateBuffer();
+       }
+    }, 2000);
+    return () => clearInterval(interval);
+  }, [selectedLang]);
 
   // Clean up on unmount
   useEffect(() => {
@@ -66,7 +80,62 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
         audioContextRef.current.close().catch(e=>console.log(e));
         audioContextRef.current = null;
     }
+
+    // Clear speech refs
+    speechQueueRef.current = [];
+    translateBufferRef.current = [];
+    isSpeechPlayingRef.current = false;
+    responseBufferRef.current = '';
+
     setIsBusy(false);
+  };
+
+  const translateToHindi = async (text, signal) => {
+    if (!text.trim()) return "";
+    if (translationCacheRef.current.has(text)) return translationCacheRef.current.get(text);
+    
+    try {
+      const res = await fetch(`${API}/translate`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        signal: signal
+      });
+      const data = await res.json();
+      const hi = data.hi;
+      translationCacheRef.current.set(text, hi);
+      return hi;
+    } catch (e) {
+      if (e.name !== 'AbortError') console.error("Translation error:", e);
+      return text; // Fallback to original
+    }
+  };
+
+  const flushTranslateBuffer = async () => {
+     if (translateBufferRef.current.length === 0 || !callActiveRef.current || !isProcessingRef.current) return;
+
+     const batch = translateBufferRef.current.join(" ");
+     translateBufferRef.current = [];
+
+     let translated = batch;
+     if (selectedLang === "hi-IN") {
+        setIsBusy(true);
+        translated = await translateToHindi(batch, abortController?.signal);
+        setIsBusy(false);
+     }
+
+     if (!isProcessingRef.current) return; // Re-check after await
+
+     // split back into sentences (supporting Hindi purna viram । as well)
+     const parts = translated.split(/(?<=[.?!।])/);
+
+     parts.forEach(p => {
+        if (p.trim()) speechQueueRef.current.push(p.trim());
+     });
+
+     if (!isSpeechPlayingRef.current) {
+        processSpeechQueue();
+     }
   };
 
   const startCall = async () => {
@@ -97,7 +166,7 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     const recognition = new SpeechRecognition();
     recognition.continuous = true;
     recognition.interimResults = true;
-    recognition.lang = 'en-US';
+    recognition.lang = selectedLang;
 
     recognition.onstart = () => {
       if (callActiveRef.current) {
@@ -174,6 +243,7 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     // Lock the interface
     setIsSpeaking(true);
     setIsBusy(true);
+    isProcessingRef.current = true;
     recognitionEnabledRef.current = false;
     setAiResponse('');
     setTranscript('');
@@ -182,6 +252,7 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     inputRefState.current = '';
     
     speechQueueRef.current = [];
+    translateBufferRef.current = [];
     isSpeechPlayingRef.current = false;
     responseBufferRef.current = '';
     
@@ -200,6 +271,7 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
             query: query,
+            lang: selectedLang === "hi-IN" ? "hi" : "en",
             k: 2,
             max_chars: 1000
         }),
@@ -227,9 +299,13 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
             } 
             
             // On completion, ensure we play whatever is left in the queue
+            if (selectedLang === "hi-IN") {
+                await flushTranslateBuffer();
+            }
+
             if (speechQueueRef.current.length > 0 && !isSpeechPlayingRef.current) {
                 processSpeechQueue();
-            } else if (speechQueueRef.current.length === 0 && !isSpeechPlayingRef.current) {
+            } else if (speechQueueRef.current.length === 0 && translateBufferRef.current.length === 0 && !isSpeechPlayingRef.current) {
                 handleSpeechComplete();
             }
 
@@ -261,9 +337,16 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
              const filtered = sentence.replace(/(\\*|#|_|`|~|>|-)/g, '').trim();
              
              if (filtered.length > 0) {
-                 speechQueueRef.current.push(filtered);
-                 if (speechQueueRef.current.length >= 2 && !isSpeechPlayingRef.current) {
-                     processSpeechQueue();
+                 if (selectedLang === "hi-IN") {
+                     translateBufferRef.current.push(filtered);
+                     if (translateBufferRef.current.length >= 3) {
+                         flushTranslateBuffer();
+                     }
+                 } else {
+                     speechQueueRef.current.push(filtered);
+                     if (speechQueueRef.current.length >= 2 && !isSpeechPlayingRef.current) {
+                        processSpeechQueue();
+                     }
                  }
              }
              spokenTextLength += endIndex;
@@ -284,15 +367,22 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
              const filtered = chunk.replace(/(\\*|#|_|`|~|>|-)/g, '').trim();
              
              if (filtered.length > 0) {
-                 speechQueueRef.current.push(filtered);
-                 if (speechQueueRef.current.length >= 2 && !isSpeechPlayingRef.current) {
-                     processSpeechQueue();
+                 if (selectedLang === "hi-IN") {
+                     translateBufferRef.current.push(filtered);
+                     if (translateBufferRef.current.length >= 3) {
+                         flushTranslateBuffer();
+                     }
+                 } else {
+                     speechQueueRef.current.push(filtered);
+                     if (speechQueueRef.current.length >= 2 && !isSpeechPlayingRef.current) {
+                         processSpeechQueue();
+                     }
                  }
              }
              spokenTextLength += lastSpace > 0 ? lastSpace : 180;
         }
 
-        if (!bufferStarted && speechQueueRef.current.length >= 1) {
+        if (!bufferStarted && (speechQueueRef.current.length >= 1 || translateBufferRef.current.length >= 1)) {
              bufferStarted = true;
         }
       }
@@ -337,7 +427,8 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
         return;
     }
 
-    const cleanText = textToSpeak.replace(/(\\*|#|_|`|~|>|-)/g, '').trim();
+    let cleanText = textToSpeak.replace(/(\\*|#|_|`|~|>|-)/g, '').trim();
+
     if (!cleanText) {
         processSpeechQueue();
         return;
@@ -346,19 +437,19 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     const utterance = new SpeechSynthesisUtterance(cleanText);
     const voices = await getVoicesAsync();
     
-    const preferredVoice = voices.find(v => v.name.includes("Online (Natural)") && v.lang.includes("en"))
-                        || voices.find(v => v.name.includes("Google UK English Female"))
-                        || voices.find(v => v.name.includes("Google US English"))
-                        || voices.find(v => v.name.includes("Google") && v.name.includes("Female") && v.lang.includes("en")) 
-                        || voices.find(v => v.name.includes("Natural") && v.lang.includes("en"))
-                        || voices.find(v => v.name.includes("Zira"))
-                        || voices.find(v => v.lang.startsWith("en"))
+    const preferredVoice = voices.find(v => v.lang === "hi-IN")
+                        || voices.find(v => v.lang.startsWith("hi"))
+                        || voices.find(v => v.name.includes("Online (Natural)") && v.lang.includes(selectedLang.split('-')[0]))
+                        || voices.find(v => v.lang.includes(selectedLang.split('-')[0]) && v.name.includes("Google"))
+                        || voices.find(v => v.lang.includes(selectedLang.split('-')[0]))
                         || voices[0];
     if (preferredVoice) utterance.voice = preferredVoice;
     
-    utterance.volume = 1;
-    utterance.rate = 1.0; 
+    utterance.lang = selectedLang;
     
+    utterance.volume = 1;
+    utterance.rate = selectedLang === "hi-IN" ? 0.85 : 1.0; 
+    utterance.pitch = 1.0;
     utterance.onstart = () => {
         setCurrentCaption(cleanText);
         setHighlightIdx(0);
@@ -366,16 +457,14 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     };
 
     utterance.onboundary = (e) => {
-        // Fallback checks just in case the browser provides undefined indices
-        if (e.name === 'word' || e.charIndex !== undefined) {
-            setHighlightIdx(e.charIndex);
+        if (e.name === 'word') {
+            // Track word index for cleaner highlighting across different languages
+            const wordsBefore = cleanText.substring(0, e.charIndex).trim().split(/\s+/).filter(Boolean).length;
+            setHighlightIdx(wordsBefore);
             
-            // 💡 Simulate highly realistic voice mapping sync using the natural boundary rhythm!
-            // When a word triggers, Spike the visualizer mapping 0.6 -> 0.95 depending on word length
             const wordIntensity = 0.5 + Math.random() * 0.5;
             setAudioLevel(wordIntensity);
             
-            // Then let it decay quickly before the next word to mimic natural syllable drop-off
             clearTimeout(reqFrameRef.current);
             reqFrameRef.current = setTimeout(() => {
                  setAudioLevel(0.2); 
@@ -389,8 +478,13 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
     utterance.onend = () => {
         clearTimeout(fallbackClearTimeout);
         isSpeechPlayingRef.current = false;
-        if (speechQueueRef.current.length > 0) {
-            processSpeechQueue();
+        if (speechQueueRef.current.length > 0 || (selectedLang === 'hi-IN' && translateBufferRef.current.length > 0)) {
+            // Either more speech in queue, or more pending in translation buffer
+            if (speechQueueRef.current.length > 0) {
+                processSpeechQueue();
+            } else {
+                // Wait for the translation buffer interval or manual flush to fill speechQueue
+            }
         } else {
             handleSpeechComplete();
         }
@@ -425,9 +519,10 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
   };
 
   const handleSpeechComplete = () => {
-      if (speechQueueRef.current.length === 0) {
+      if (speechQueueRef.current.length === 0 && translateBufferRef.current.length === 0) {
           setIsSpeaking(false);
           setIsBusy(false);
+          isProcessingRef.current = false;
           setCurrentCaption('');
           recognitionEnabledRef.current = true;
           setTranscript('');
@@ -443,38 +538,79 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
      if (window.speechSynthesis) {
          window.speechSynthesis.cancel();
      }
+     
+     // Clear all speech refs
      isSpeechPlayingRef.current = false;
      speechQueueRef.current = [];
+     translateBufferRef.current = [];
      responseBufferRef.current = '';
+     
      setCurrentCaption('');
      setAudioLevel(0);
      setIsSpeaking(false);
      setIsBusy(false);
+     isProcessingRef.current = false;
      recognitionEnabledRef.current = true;
      setTranscript('');
      inputRefState.current = '';
   };
 
   return (
-    <div className="w-full h-full flex flex-col items-center justify-center bg-[#0f172a] rounded-3xl overflow-hidden relative shadow-inner">
+    <div className="w-full h-full flex flex-col items-center justify-center bg-yellow-300 border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] overflow-hidden relative z-50">
       
       {/* Top Header Actions */}
-      <div className="absolute top-6 left-6 z-30">
-         <button onClick={onClose} className="w-10 h-10 bg-white/10 hover:bg-white/20 text-white rounded-full flex items-center justify-center transition-colors shadow-lg backdrop-blur-md">
-             <ArrowLeft className="w-5 h-5" />
+      <div className="absolute top-6 left-6 right-6 flex justify-between items-center z-30">
+         <button onClick={onClose} className="w-12 h-12 bg-white border-4 border-slate-900 text-slate-900 hover:bg-slate-100 flex items-center justify-center transition-all shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]">
+             <ArrowLeft className="w-6 h-6 stroke-[3px]" />
          </button>
+
+         <div className="relative">
+            <button 
+              onClick={() => setShowLangMenu(!showLangMenu)}
+              className="px-4 h-12 bg-white border-4 border-slate-900 text-slate-900 font-black uppercase flex items-center gap-2 hover:bg-slate-100 transition-all shadow-[4px_4px_0px_#0f172a] hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a]"
+            >
+              <Globe className="w-5 h-5" />
+              <span>{selectedLang === 'en-US' ? 'English' : 'हिंदी'}</span>
+              <ChevronDown className={`w-4 h-4 transition-transform ${showLangMenu ? 'rotate-180' : ''}`} />
+            </button>
+
+            <AnimatePresence>
+              {showLangMenu && (
+                <motion.div 
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  className="absolute right-0 mt-2 w-40 bg-white border-4 border-slate-900 shadow-[8px_8px_0px_#0f172a] overflow-hidden"
+                >
+                  <button 
+                    onClick={() => { setSelectedLang('en-US'); setShowLangMenu(false); }}
+                    className={`w-full text-left px-4 py-3 font-bold hover:bg-lime-200 transition-colors border-b-4 border-slate-900 ${selectedLang === 'en-US' ? 'bg-lime-300' : ''}`}
+                  >
+                    ENGLISH
+                  </button>
+                  <button 
+                    onClick={() => { setSelectedLang('hi-IN'); setShowLangMenu(false); }}
+                    className={`w-full text-left px-4 py-3 font-bold hover:bg-lime-200 transition-colors ${selectedLang === 'hi-IN' ? 'bg-lime-300' : ''}`}
+                  >
+                    हिंदी (HINDI)
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+         </div>
       </div>
 
-      {/* Background Orbs */}
+      {/* Background Shapes */}
       <motion.div 
-        animate={{ scale: [1, 1.2, 1], opacity: [0.3, 0.5, 0.3] }} 
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute w-[400px] h-[400px] bg-indigo-600/20 blur-[100px] rounded-full" 
+        animate={{ rotate: 360 }} 
+        transition={{ duration: 60, repeat: Infinity, ease: 'linear' }}
+        className="absolute -top-32 -right-32 w-[600px] h-[600px] bg-lime-300 border-[12px] border-slate-900 border-dashed rounded-full opacity-20 pointer-events-none" 
       />
       <motion.div 
-        animate={{ scale: [1, 1.5, 1], opacity: [0.2, 0.4, 0.2] }} 
-        transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
-        className="absolute w-[300px] h-[300px] bg-violet-600/20 blur-[80px] rounded-full" 
+        animate={{ rotate: -360 }} 
+        transition={{ duration: 80, repeat: Infinity, ease: 'linear' }}
+        className="absolute -bottom-40 -left-20 w-[600px] h-[600px] bg-coral-300 border-[16px] border-slate-900 opacity-20 pointer-events-none shadow-[20px_20px_0px_#0f172a]" 
+        style={{ borderRadius: '40% 60% 70% 30% / 40% 50% 60% 50%' }}
       />
 
       <div className="z-10 flex flex-col items-center justify-center w-full max-w-2xl px-8">
@@ -482,126 +618,109 @@ export default function CallView({ activeProj, setIsBusy, onClose }) {
         {/* Core Visualizer */}
         <div className="relative mb-8">
             <motion.div 
-              animate={isListening && !isSpeaking ? { scale: [1, 1.1, 1] } : { scale: 1 }}
+              animate={isListening && !isSpeaking ? { scale: [1, 1.05, 1] } : { scale: 1 }}
               transition={{ repeat: Infinity, duration: 1.5 }}
-              className={`w-32 h-32 rounded-full flex items-center justify-center shadow-2xl transition-all duration-500 z-20 relative ${isActive ? (isSpeaking ? 'bg-indigo-600 shadow-indigo-500/50' : 'bg-emerald-500 shadow-emerald-500/50') : 'bg-slate-800'}`}
+              className={`w-40 h-40 border-8 border-slate-900 flex items-center justify-center shadow-[12px_12px_0px_#0f172a] transition-all duration-500 z-20 relative ${isActive ? (isSpeaking ? 'bg-indigo-400 text-slate-900' : 'bg-lime-400 text-slate-900') : 'bg-white text-slate-900'}`}
             >
               {isActive ? (
-                  isSpeaking ? <Loader className="w-12 h-12 text-white animate-spin" /> : <Mic className="w-12 h-12 text-white" />
+                  isSpeaking ? <Loader className="w-16 h-16 animate-spin stroke-[3px]" /> : <Mic className="w-16 h-16 stroke-[3px]" />
               ) : (
-                  <PhoneOff className="w-12 h-12 text-slate-500" />
+                  <PhoneOff className="w-16 h-16 stroke-[3px]" />
               )}
             </motion.div>
             
             {/* Pulsing rings when listening */}
             {isListening && !isSpeaking && (
-                <>
-                    <motion.div animate={{ scale: [1, 1.5], opacity: [0.5, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="absolute inset-0 bg-emerald-500 rounded-full z-10" />
-                    <motion.div animate={{ scale: [1, 2], opacity: [0.3, 0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="absolute inset-0 bg-emerald-500 rounded-full z-10" />
-                </>
+                <div className="absolute inset-0 z-10 pointer-events-none flex items-center justify-center">
+                    <motion.div animate={{ scale: [1, 1.3], opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 1.5 }} className="absolute w-40 h-40 border-8 border-slate-900 bg-transparent" />
+                    <motion.div animate={{ scale: [1, 1.6], opacity: [1, 0] }} transition={{ repeat: Infinity, duration: 1.5, delay: 0.2 }} className="absolute w-40 h-40 border-8 border-slate-900 bg-transparent" />
+                </div>
             )}
             {/* Glowing ring/Visualizer when speaking */}
             {isSpeaking && (
-                <div className="absolute inset-0 pointer-events-none flex items-center justify-center">
-                    {/* Audio visualizer spheres tied to actual TTS volume level out of 1.0 */}
+                <div className="absolute inset-0 pointer-events-none flex items-center justify-center z-10">
                     {[...Array(5)].map((_, i) => {
-                        const baseSize = 130;
-                        // Stagger the intensity slightly for each ring to look complex
+                        const baseSize = 160;
                         const sizeBoost = (audioLevel * 100) * (1 + (i * 0.2)); 
                         
                         return (
                             <motion.div
                                key={`vis-${i}`}
-                               className="absolute rounded-full border border-indigo-500/50"
+                               className="absolute border-4 border-slate-900"
+                               style={{ backgroundColor: i % 2 === 0 ? 'rgba(99, 102, 241, 0.2)' : 'transparent' }}
                                animate={{
                                    width: baseSize + sizeBoost,
                                    height: baseSize + sizeBoost,
-                                   opacity: audioLevel > 0.1 ? 0.8 - (i * 0.1) : 0.2,
-                                   borderWidth: Math.max(2, audioLevel * 8)
+                                   opacity: audioLevel > 0.1 ? 1 - (i * 0.15) : 0,
+                                   rotate: audioLevel > 0.3 ? (i%2===0?1:-1)*10 : 0
                                }}
                                transition={{ type: "spring", damping: 15, stiffness: 250 }}
                             />
                         );
                     })}
-                    {/* Outer ripple */}
-                    <motion.div 
-                        animate={{ 
-                            scale: 1 + (audioLevel * 0.8), 
-                            opacity: audioLevel > 0.1 ? 0.4 : 0 
-                        }} 
-                        transition={{ type: "spring", damping: 12 }} 
-                        className="absolute inset-m-4 border-4 border-indigo-400 rounded-full" 
-                        style={{ left: -16, right: -16, top: -16, bottom: -16 }} 
-                    />
                 </div>
             )}
         </div>
 
         {/* Text Feeds */}
-        <div className="text-center h-48 w-full flex flex-col items-center justify-center space-y-4">
+        <div className="text-center h-48 w-full flex flex-col items-center justify-center space-y-4 z-20">
             <AnimatePresence mode="wait">
                 {isActive ? (
                     isSpeaking ? (
-                       <motion.div key="speaking" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-white space-y-3 max-w-2xl w-full flex flex-col items-center">
-                           <div className="text-xs font-bold text-indigo-400 tracking-widest uppercase mb-2">AI is Speaking</div>
-                           <div className="text-sm md:text-base opacity-80 font-medium leading-relaxed w-full px-4 text-center pb-4">
+                       <motion.div key="speaking" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-slate-900 space-y-4 max-w-3xl w-full flex flex-col items-center">
+                           <div className="text-sm font-black bg-indigo-400 border-4 border-slate-900 px-4 py-2 tracking-widest uppercase shadow-[4px_4px_0px_#0f172a]">AI is Speaking</div>
+                           <div className="text-xl md:text-2xl font-black uppercase tracking-tight leading-relaxed w-full px-4 text-center pb-4">
                               {currentCaption ? (
                                   (() => {
-                                      // Find next space or end of string safely
-                                      let nextSpace = currentCaption.indexOf(' ', highlightIdx);
-                                      if (nextSpace === -1) nextSpace = currentCaption.length;
-                                      
-                                      // Optional bounds checking
-                                      const safeHighlightIndex = Math.min(highlightIdx, currentCaption.length);
-                                      
-                                      const spoken = currentCaption.substring(0, safeHighlightIndex);
-                                      const activeWord = currentCaption.substring(safeHighlightIndex, nextSpace);
-                                      const upcoming = currentCaption.substring(nextSpace);
+                                      const words = currentCaption.split(/\s+/);
+                                      const spoken = words.slice(0, highlightIdx).join(" ");
+                                      const activeWord = words[highlightIdx] || "";
+                                      const upcoming = words.slice(highlightIdx + 1).join(" ");
                                       
                                       return (
                                           <div className="transition-all duration-150">
-                                              <span className="text-indigo-300 font-semibold">{spoken}</span>
-                                              <span className="text-white font-black bg-indigo-500/40 px-1 py-0.5 rounded shadow-lg scale-110 inline-block mx-0.5 transition-transform">{activeWord}</span>
-                                              <span className="text-slate-400 font-medium">{upcoming}</span>
+                                              <span className="text-slate-900/60 font-black">{spoken} </span>
+                                              {activeWord && <span className="text-white bg-slate-900 border-4 border-slate-900 px-2 py-1 shadow-[4px_4px_0px_#0f172a] scale-110 inline-block mx-1 transition-transform">{activeWord}</span>}
+                                              <span className="text-slate-900"> {upcoming}</span>
                                           </div>
                                       );
                                   })()
                               ) : (
-                                  <span className="text-indigo-300/80 animate-pulse">Thinking...</span>
+                                  <span className="text-slate-900/50 animate-pulse bg-white border-4 border-slate-900 px-6 py-3 shadow-[8px_8px_0px_#0f172a]">Thinking...</span>
                               )}
                            </div>
                        </motion.div>
                     ) : (
-                       <motion.div key="listening" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-white space-y-2 max-w-lg w-full">
-                           <div className="text-xs font-bold text-emerald-400 tracking-widest uppercase">Listening...</div>
-                           <div className="text-lg font-medium text-slate-300 min-h-[1.75rem]">{transcript || "Waiting for your voice..."}</div>
+                       <motion.div key="listening" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="text-slate-900 space-y-4 max-w-3xl w-full flex flex-col items-center">
+                           <div className="text-sm font-black bg-lime-400 border-4 border-slate-900 px-4 py-2 tracking-widest uppercase shadow-[4px_4px_0px_#0f172a]">Listening...</div>
+                           <div className="text-2xl font-black uppercase tracking-tight min-h-[1.75rem] max-w-2xl bg-white border-4 border-slate-900 p-6 shadow-[8px_8px_0px_#0f172a]">{transcript || "Waiting for your voice..."}</div>
                        </motion.div>
                     )
                 ) : (
-                    <motion.div key="inactive" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-slate-400">
-                        <div className="text-2xl font-bold text-white mb-2">Hands-Free Call Mode</div>
-                        <p>Have an interactive, low-latency vocal conversation with your project's AI context.</p>
+                    <motion.div key="inactive" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-slate-900 flex flex-col items-center">
+                        <div className="text-4xl font-black uppercase tracking-tight mb-6 bg-white border-4 border-slate-900 px-6 py-4 shadow-[8px_8px_0px_#0f172a] -rotate-2">Hands-Free Call Mode</div>
+                        <p className="font-bold text-lg bg-indigo-300 border-4 border-slate-900 px-6 py-3 shadow-[4px_4px_0px_#0f172a]">Have an interactive, low-latency vocal conversation with your project's AI context.</p>
                     </motion.div>
                 )}
             </AnimatePresence>
         </div>
 
         {/* Controls */}
-        <div className="mt-8 flex items-center justify-center gap-4">
+        <div className="mt-12 flex items-center justify-center gap-6 z-20">
              {!isActive ? (
-                 <button onClick={startCall} disabled={!activeProj} className="w-16 h-16 bg-emerald-500 text-white rounded-full flex items-center justify-center hover:bg-emerald-600 transition-transform hover:scale-105 shadow-xl disabled:opacity-50 disabled:hover:scale-100">
-                     <Phone className="w-7 h-7" />
+                 <button onClick={startCall} disabled={!activeProj} className="w-24 h-24 bg-lime-400 text-slate-900 border-4 border-slate-900 flex items-center justify-center hover:bg-lime-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] shadow-[8px_8px_0px_#0f172a] disabled:opacity-50 disabled:hover:translate-x-0 disabled:hover:translate-y-0 disabled:hover:shadow-[8px_8px_0px_#0f172a]">
+                     <Phone className="w-10 h-10 stroke-[3px]" />
                  </button>
              ) : (
                  <>
-                     <button onClick={endCall} className="w-16 h-16 bg-red-500 text-white rounded-full flex items-center justify-center hover:bg-red-600 transition-transform hover:scale-105 shadow-xl">
-                         <PhoneOff className="w-7 h-7" />
+                     <button onClick={endCall} className="w-24 h-24 bg-red-400 text-slate-900 border-4 border-slate-900 flex items-center justify-center hover:bg-red-500 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] shadow-[8px_8px_0px_#0f172a]">
+                         <PhoneOff className="w-10 h-10 stroke-[3px]" />
                      </button>
                      
                      <AnimatePresence>
                          {isSpeaking && (
-                             <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} onClick={handleInterrupt} className="absolute ml-32 w-12 h-12 bg-slate-700 text-white rounded-full flex items-center justify-center hover:bg-slate-600 transition-transform hover:scale-105 shadow-xl">
-                                 <Square className="w-5 h-5 fill-white" />
+                             <motion.button initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.8 }} onClick={handleInterrupt} className="absolute ml-40 mt-12 w-16 h-16 bg-white text-slate-900 border-4 border-slate-900 flex items-center justify-center hover:bg-slate-100 transition-all hover:translate-x-[2px] hover:translate-y-[2px] hover:shadow-[0px_0px_0px_#0f172a] shadow-[4px_4px_0px_#0f172a]">
+                                 <Square className="w-6 h-6 fill-slate-900 stroke-[3px]" />
                              </motion.button>
                          )}
                      </AnimatePresence>

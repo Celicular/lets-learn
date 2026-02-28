@@ -1,0 +1,135 @@
+A Mastery Heatmap visualizes topic-wise performance so users instantly see strengths vs weak areas.
+Since you already have topic extraction + quiz analytics, the heatmap is mainly data modeling → scoring → visualization.
+
+1️⃣ Define the Data Model (Backend)
+
+You need a persistent structure storing topic attempts + accuracy.
+
+Minimal schema
+{
+  "user_id": "u1",
+  "project_id": "data_science",
+  "topics": {
+    "Data Mining": {
+      "attempted": 32,
+      "correct": 24,
+      "accuracy": 75,
+      "last_attempt": "2026-02-26T12:20"
+    },
+    "Clustering": {
+      "attempted": 18,
+      "correct": 6,
+      "accuracy": 33
+    }
+  }
+}
+How to update after quiz
+def update_topic_stats(stats, topic, correct):
+    if topic not in stats:
+        stats[topic] = {"attempted": 0, "correct": 0}
+
+    stats[topic]["attempted"] += 1
+    if correct:
+        stats[topic]["correct"] += 1
+
+    stats[topic]["accuracy"] = round(
+        stats[topic]["correct"] / stats[topic]["attempted"] * 100
+    )
+
+👉 Save this in:
+
+SQLite (recommended)
+
+OR performance.json per project (simpler)
+
+2️⃣ Convert Accuracy → Heatmap Intensity
+
+Create color buckets (simple + interpretable).
+
+Accuracy	Color Meaning
+0–30%	🔴 Weak
+31–60%	🟠 Needs Practice
+61–80%	🟡 Good
+81–100%	🟢 Mastered
+
+Backend helper:
+
+def mastery_level(acc):
+    if acc <= 30: return "weak"
+    if acc <= 60: return "practice"
+    if acc <= 80: return "good"
+    return "mastered"
+3️⃣ Heatmap Layout Strategy (Frontend)
+
+You have React + framer-motion + neobrutalist UI, so best patterns:
+
+Option A (Recommended)
+
+Grid of topic cards with color intensity
+
+[ Data Mining ]   [ Clustering ]   [ Classification ]
+[ Association ]   [ Regression ]   [ Warehousing ]
+
+This fits your current design system.
+
+4️⃣ React Heatmap Component
+const colorMap = {
+  weak: "bg-red-400",
+  practice: "bg-orange-300",
+  good: "bg-yellow-300",
+  mastered: "bg-lime-400"
+};
+
+export default function MasteryHeatmap({ topics }) {
+  return (
+    <div className="grid grid-cols-3 gap-4">
+      {Object.entries(topics).map(([topic, data]) => (
+        <div
+          key={topic}
+          className={`p-4 border-4 shadow-hard ${colorMap[data.level]}`}
+        >
+          <h3 className="font-bold">{topic}</h3>
+          <p>{data.accuracy}% mastery</p>
+          <p className="text-sm">{data.attempted} attempts</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+5️⃣ Backend → Frontend API Response
+
+Return enriched heatmap data:
+
+def build_heatmap(stats):
+    heatmap = {}
+    for topic, d in stats.items():
+        heatmap[topic] = {
+            "accuracy": d["accuracy"],
+            "attempted": d["attempted"],
+            "level": mastery_level(d["accuracy"])
+        }
+    return heatmap
+6️⃣ Advanced Enhancements (Highly Recommended)
+⭐ Time-Weighted Mastery
+
+Recent attempts matter more:
+
+weighted_score = 0.7 * recent_accuracy + 0.3 * historical
+⭐ Weak Area Detection (for your drill feature)
+weak_topics = [t for t, d in stats.items() if d["accuracy"] < 50]
+
+This directly powers:
+
+Weak Area Drill
+
+Adaptive quiz routing
+
+Smart retry scheduling
+
+⭐ Tooltip Insight (UX boost)
+
+On hover show:
+
+Last attempt
+Accuracy trend
+Suggested action we will implement this... int he results section... now go through the proejct and uising the exisitng features modify the backend ont he frontend but iw ant this implemented . plan it
